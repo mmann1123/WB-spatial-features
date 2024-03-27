@@ -1,56 +1,65 @@
 import ee
 
+CLOUD_FILTER = 30
 CLD_PRB_THRESH = 80
 NIR_DRK_THRESH = 1
 CLD_PRJ_DIST = 2
 BUFFER = 90
 SCALE = 10
 
+# # ryans setting
+# CLOUD_FILTER = 60  # was 60
+# CLD_PRB_THRESH = 60
+# NIR_DRK_THRESH = 1
+# CLD_PRJ_DIST = 6
+# BUFFER = 100
 
 import json
 
 
-def create_ee_polygon_from_geojson(geojson_path):
-    """
-    Reads a .geojson file and returns an ee.Geometry.Polygon object.
+# def create_ee_polygon_from_geojson(geojson_path):
+#     """
+#     Reads a .geojson file and returns an ee.Geometry.Polygon object.
 
-    Parameters:
-    - geojson_path: Path to the .geojson file
+#     Parameters:
+#     - geojson_path: Path to the .geojson file
 
-    Returns:
-    - An ee.Geometry.Polygon object based on the .geojson coordinates
+#     Returns:
+#     - An ee.Geometry.Polygon object based on the .geojson coordinates
 
-    Raises:
-    - FileNotFoundError: If the .geojson file does not exist at the specified path
-    - ValueError: If the .geojson structure is not supported
-    """
-    try:
-        # Load the GeoJSON file
-        with open(geojson_path) as f:
-            geojson = json.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            f"No .geojson file found at the specified path: {geojson_path}"
-        )
+#     Raises:
+#     - FileNotFoundError: If the .geojson file does not exist at the specified path
+#     - ValueError: If the .geojson structure is not supported
+#     """
+#     try:
+#         # Load the GeoJSON file
+#         with open(geojson_path) as f:
+#             geojson = json.load(f)
+#     except FileNotFoundError:
+#         raise FileNotFoundError(
+#             f"No .geojson file found at the specified path: {geojson_path}"
+#         )
 
-    # Check and extract coordinates based on the GeoJSON structure
-    if geojson["type"] == "Feature" and geojson["geometry"]["type"] == "Polygon":
-        coordinates = geojson["geometry"]["coordinates"]
-    elif geojson["type"] == "FeatureCollection":
-        if not all(
-            feat["geometry"]["type"] == "Polygon" for feat in geojson["features"]
-        ):
-            raise ValueError("All features must be Polygons in the FeatureCollection")
-        # Optionally handle FeatureCollections differently here.
-        # For simplicity, this takes the first feature's geometry
-        coordinates = geojson["features"][0]["geometry"]["coordinates"]
-    else:
-        raise ValueError(
-            "The GeoJSON must be a Feature or FeatureCollection with Polygon geometries"
-        )
+#     # Check and extract coordinates based on the GeoJSON structure
+#     if geojson["type"] == "Feature" and geojson["geometry"]["type"] == "Polygon":
+#         coordinates = geojson["geometry"]["coordinates"]
+#     elif geojson["type"] == "FeatureCollection":
+#         if not all(
+#             (feat["geometry"]["type"] == "Polygon")
+#             or (feat["geometry"]["type"] == "MultiPolygon")
+#             for feat in geojson["features"]
+#         ):
+#             raise ValueError("All features must be Polygons in the FeatureCollection")
+#         # Optionally handle FeatureCollections differently here.
+#         # For simplicity, this takes the first feature's geometry
+#         coordinates = geojson["features"][0]["geometry"]["coordinates"]
+#     else:
+#         raise ValueError(
+#             "The GeoJSON must be a Feature or FeatureCollection with Polygon geometries"
+#         )
 
-    # Create and return the Earth Engine Polygon Geometry
-    return ee.Geometry.Polygon(coordinates)
+#     # Create and return the Earth Engine Polygon Geometry
+#     return ee.Geometry.Polygon(coordinates)
 
 
 def add_cloud_bands(img, CLD_PRB_THRESH):
@@ -126,7 +135,9 @@ def add_cld_shdw_mask(
     return img_cloud_shadow.addBands(is_cld_shdw)
 
 
-def get_s2_sr_cld_col(aoi, start_date, end_date, product="S2_SR", CLOUD_FILTER=30):
+def get_s2_sr_cld_col(
+    aoi, start_date, end_date, product="S2_SR", CLOUD_FILTER=CLOUD_FILTER
+):
     # Import and filter S2 SR.
     s2_sr_col = (
         ee.ImageCollection("COPERNICUS/" + product)
