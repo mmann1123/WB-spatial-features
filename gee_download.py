@@ -28,14 +28,21 @@ from geetools import ui, cloud_mask, batch
 #     ]
 # )
 
-geojson_path = "./data/north_adm2.geojson"
+north_path = "./data/north_adm2.geojson"
 
 try:
-    site = create_ee_polygon_from_geojson(geojson_path)
-    print(site.getInfo())  # Print the polygon's info to verify
+    north = create_ee_polygon_from_geojson(north_path)
+    print(north.getInfo())  # Print the polygon's info to verify
 except Exception as e:
     print(f"Error: {e}")
 
+south_path = "./data/south_adm2.geojson"
+
+try:
+    south = create_ee_polygon_from_geojson(south_path)
+    print(south.getInfo())  # Print the polygon's info to verify
+except Exception as e:
+    print(f"Error: {e}")
 
 # Set parameters
 bands = ["B2", "B3", "B4", "B8"]
@@ -49,7 +56,7 @@ CLOUD_FILTER = 75
 
 
 # %% QUARTERLY COMPOSITES
-
+# North
 q_finished = []
 for year in list(range(2021, 2023)):
     for month in list(range(1, 13)):
