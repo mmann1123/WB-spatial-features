@@ -1,11 +1,11 @@
 import ee
 
-CLOUD_FILTER = 30
-CLD_PRB_THRESH = 80
-NIR_DRK_THRESH = 1
-CLD_PRJ_DIST = 2
-BUFFER = 90
-SCALE = 10
+# CLOUD_FILTER = 30 set by user
+# CLD_PRB_THRESH = 80
+# NIR_DRK_THRESH = 1
+# CLD_PRJ_DIST = 2
+# BUFFER = 90
+# SCALE = 10
 
 # # ryans setting
 # CLOUD_FILTER = 60  # was 60
@@ -15,6 +15,17 @@ SCALE = 10
 # BUFFER = 100
 
 import json
+
+
+def mask_water(image):
+    # Calculate NDWI
+    ndwi = image.normalizedDifference(
+        ["B3", "B8"]
+    )  # NDWI = (Green - NIR) / (Green + NIR)
+    # Create a water mask (1 for water, 0 for non-water)
+    water_mask = ndwi.gt(0)  # Threshold can be adjusted depending on the scene.
+    # Update the image's mask to exclude water
+    return image.updateMask(water_mask.Not())
 
 
 def add_cloud_bands(img, CLD_PRB_THRESH):
@@ -64,9 +75,23 @@ def add_shadow_bands(img, NIR_DRK_THRESH, CLD_PRJ_DIST):
 
 
 def add_cld_shdw_mask(
-    img, CLD_PRB_THRESH=CLD_PRB_THRESH, NIR_DRK_THRESH=NIR_DRK_THRESH, SCALE=SCALE
+    img,
+    CLD_PRB_THRESH=100,
+    NIR_DRK_THRESH=1,
+    SCALE=10,
+    CLD_PRJ_DIST=2,
+    BUFFER=90,
+    B3_min_threshold=1000,
 ):
     # Add cloud component bands.
+
+    # print("Adding cloud bands using paremeters:")
+    # print(f"CLD_PRB_THRESH: {CLD_PRB_THRESH}")
+    # print(f"NIR_DRK_THRESH: {NIR_DRK_THRESH}")
+    # print(f"SCALE: {SCALE}")
+    # print(f"CLD_PRJ_DIST: {CLD_PRJ_DIST}")
+    # print(f"BUFFER: {BUFFER}")
+
     img_cloud = add_cloud_bands(img, CLD_PRB_THRESH)
 
     # Add cloud shadow component bands.
@@ -86,13 +111,21 @@ def add_cld_shdw_mask(
         .rename("cloudmask")
     )
 
+    # mask out all pixels where B3 is greater than 1000 as clouds
+    img_cloud_shadow = img_cloud_shadow.updateMask(
+        img_cloud_shadow.select("B3").lt(B3_min_threshold)
+    )
+
     # Add the final cloud-shadow mask to the image.
     return img_cloud_shadow.addBands(is_cld_shdw)
 
 
-def get_s2_sr_cld_col(
-    aoi, start_date, end_date, product="S2_SR", CLOUD_FILTER=CLOUD_FILTER
+def get_s2A_SR_sr_cld_collection(
+    aoi, start_date, end_date, product="S2_SR", CLOUD_FILTER=50
 ):
+    print("get_s2A_SR_sr_cld_collection")
+    print("Cloud Filter:", CLOUD_FILTER)
+
     # Import and filter S2 SR.
     s2_sr_col = (
         ee.ImageCollection("COPERNICUS/" + product)
@@ -160,3 +193,66 @@ def apply_cld_shdw_mask(img):
 
     # Subset reflectance bands and update their masks, return the result.
     return img.select("B.*").updateMask(not_cld_shdw)
+
+
+def create_ee_polygon_from_geojson(geojson_path):
+    """
+    Reads a .geojson file and returns an ee.Geometry.Polygon object.
+
+    Parameters:
+    - geojson_path: Path to the .geojson file
+
+    Returns:
+    - An ee.Geometry.Polygon object based on the .geojson coordinates
+
+    Raises:
+    - FileNotFoundError: If the .geojson file does not exist at the specified path
+    - ValueError: If the .geojson structure is not supported
+    """
+    try:
+        # Load the GeoJSON file
+        geojson = json.load(geojson_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"No .geojson file found at the specified path: {geojson_path}"
+        )
+
+    # Check and extract coordinates based on the GeoJSON structure
+    if geojson["type"] == "Feature":
+        geom_type = geojson["geometry"]["type"]
+        coordinates = geojson["geometry"]["coordinates"]
+        if geom_type == "Polygon":
+            return ee.Geometry.Polygon(coordinates)
+        elif geom_type == "MultiPolygon":
+            return ee.Geometry.MultiPolygon(coordinates)
+        else:
+            raise ValueError(
+                "The GeoJSON Feature must have Polygon or MultiPolygon geometry"
+            )
+    elif geojson["type"] == "FeatureCollection":
+        polygons = []
+        multi_polygons = []
+        for feature in geojson["features"]:
+            geom_type = feature["geometry"]["type"]
+            coordinates = feature["geometry"]["coordinates"]
+            if geom_type == "Polygon":
+                polygons.append(coordinates)
+            elif geom_type == "MultiPolygon":
+                multi_polygons.extend(coordinates)  # Flatten MultiPolygon coordinates
+            else:
+                raise ValueError(
+                    "FeatureCollection contains unsupported geometry types"
+                )
+
+        # Use MultiPolygon if any MultiPolygons exist or if there are multiple polygons
+        if multi_polygons or len(polygons) > 1:
+            return ee.Geometry.MultiPolygon(polygons + multi_polygons)
+        elif polygons:
+            return ee.Geometry.Polygon(
+                polygons[0]
+            )  # Use the first Polygon if that's all we have
+
+    else:
+        raise ValueError(
+            "The GeoJSON must be a Feature or FeatureCollection with Polygon or MultiPolygon geometries"
+        )
