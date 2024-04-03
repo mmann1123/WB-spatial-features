@@ -107,7 +107,7 @@ def add_cld_shdw_mask(
     is_cld_shdw = (
         is_cld_shdw.focalMin(2)
         .focalMax(BUFFER * 2 / SCALE)
-        .reproject(**{"crs": img.select([0]).projection(), "scale": SCALE})
+        .reproject(**{"crs": img.select([0]).projection(), "scale": 20})
         .rename("cloudmask")
     )
 

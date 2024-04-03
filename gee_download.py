@@ -4,9 +4,9 @@
 # and https://developers.google.com/earth-engine/guides/python_install-conda
 
 
-import pendulum
 import ee
-
+import pendulum
+from ipygee import *
 from helpers import *
 
 # run authenticate first time
@@ -26,11 +26,7 @@ fc_south = create_ee_polygon_from_geojson(f_south)
 
 
 # %%
-import ee
-import pendulum
-
-# Initialize the Earth Engine
-ee.Initialize()
+ 
 
 # Define your Area of Interest (AOI)
 AOI = ee.FeatureCollection("FAO/GAUL/2015/level0").filter(
@@ -48,14 +44,14 @@ scale = 10
 
 
 # Add cloud probability and is_cloud bands to the image
-def add_cloud_bands(img):
+def add_cloud_bands(img,CLD_PRB_THRESH):
     cld_prb = ee.Image(img.get("s2cloudless")).select("probability")
     is_cloud = cld_prb.gt(CLD_PRB_THRESH).rename("clouds")
     return img.addBands(ee.Image([cld_prb, is_cloud]))
 
 
 # Add shadow bands to the image
-def add_shadow_bands(img):
+def add_shadow_bands(img,NIR_DRK_THRESH, CLD_PRJ_DIST):
     not_water = img.select("SCL").neq(6)
     dark_pixels = (
         img.select("B8")
@@ -69,7 +65,7 @@ def add_shadow_bands(img):
     cld_proj = (
         img.select("clouds")
         .directionalDistanceTransform(shadow_azimuth, CLD_PRJ_DIST * 10)
-        .reproject({"crs": img.select(0).projection(), "scale": 100})
+        .reproject( 'EPSG:4326', None, 20)
         .select("distance")
         .mask()
         .rename("cloud_transform")
@@ -79,16 +75,19 @@ def add_shadow_bands(img):
 
 
 # Combine cloud and shadow mask, and add water mask
-def apply_masks(img):
-    img_cloud = add_cloud_bands(img)
-    img_cloud_shadow = add_shadow_bands(img_cloud)
+def apply_masks(img,CLD_PRB_THRESH=30,
+                            NIR_DRK_THRESH=0.15,
+                            CLD_PRJ_DIST=1,
+                            BUFFER = 50):
+    img_cloud = add_cloud_bands(img, CLD_PRB_THRESH)
+    img_cloud_shadow = add_shadow_bands(img_cloud,NIR_DRK_THRESH, CLD_PRJ_DIST)
     is_cld_shdw = (
         img_cloud_shadow.select("clouds").add(img_cloud_shadow.select("shadows")).gt(0)
     )
     is_cld_shdw_masked = (
         is_cld_shdw.focal_min(2)
         .focal_max(BUFFER * 2 / 20)
-        .reproject({"crs": img.select(0).projection(), "scale": 20})
+        .reproject(**{"crs": img.select([0]).projection(), "scale": 20})
         .rename("cloudmask")
     )
     not_cld_shdw = is_cld_shdw_masked.Not()
@@ -97,14 +96,50 @@ def apply_masks(img):
     # Mask water
     ndwi = img.normalizedDifference(["B3", "B8"])
     water_mask = ndwi.gt(0).Not()
-    return img_masked.updateMask(water_mask)
+    img_masked = img_masked.updateMask(water_mask)
+    return img_masked
 
+
+def get_s2A_SR_sr_cld_collection(
+    aoi, start_date, end_date, product="S2_SR", CLOUD_FILTER=50
+):
+    print("get_s2A_SR_sr_cld_collection")
+    print("Cloud Filter:", CLOUD_FILTER)
+
+    # Import and filter S2 SR.
+    s2_sr_col = (
+        ee.ImageCollection("COPERNICUS/" + product)
+        .filterBounds(aoi)
+        .filterDate(start_date, end_date)
+        .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", CLOUD_FILTER))
+    )
+
+    # Import and filter s2cloudless.
+    s2_cloudless_col = (
+        ee.ImageCollection("COPERNICUS/S2_CLOUD_PROBABILITY")
+        .filterBounds(aoi)
+        .filterDate(start_date, end_date)
+    )
+
+    # Join the filtered s2cloudless collection to the SR collection by the 'system:index' property.
+    return ee.ImageCollection(
+        ee.Join.saveFirst("s2cloudless").apply(
+            **{
+                "primary": s2_sr_col,
+                "secondary": s2_cloudless_col,
+                "condition": ee.Filter.equals(
+                    **{"leftField": "system:index", "rightField": "system:index"}
+                ),
+            }
+        )
+    )
 
 def quarterly_composites(start_year, end_year, aoi):
     for site, name in zip([fc_north, fc_south], ["north", "south"]):
-
+        if name == "north":
+            continue
         for year in range(start_year, end_year + 1)[0:1]:
-            for quarter in range(1, 5):
+            for quarter in range(1, 5)[0:1]:
 
                 start_date, end_date = pendulum.datetime(
                     year, 3 * quarter - 2, 1
@@ -116,21 +151,35 @@ def quarterly_composites(start_year, end_year, aoi):
                     r"%Y-%m-%d"
                 )
                 print(start_date, end_date)
+  
                 current_quarter = pendulum.datetime(year, 3 * quarter - 2, 1).quarter
-                s2_sr_col = (
-                    ee.ImageCollection("COPERNICUS/S2_SR")
-                    .filterBounds(aoi)
-                    .filterDate(start_date, end_date)
-                    .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", CLOUD_FILTER))
+  
+  
+                  # filter by date and cloud cover
+                s2_sr_col = get_s2A_SR_sr_cld_collection(
+                    site,
+                    start_date,
+                    end_date,
+                    CLOUD_FILTER=CLOUD_FILTER,
                 )
-                s2_sr_col = s2_sr_col.map(apply_masks)
+
+                # add cloud and shadow mask
+                s2_sr = (
+                    s2_sr_col.map(
+                        lambda image: apply_masks(
+                            image,
+                            CLD_PRB_THRESH=CLD_PRB_THRESH,
+                            NIR_DRK_THRESH=NIR_DRK_THRESH,
+                            CLD_PRJ_DIST=CLD_PRJ_DIST,
+                            BUFFER = 50
+                        )
+                    )
+                    .select(["B4", "B3", "B2"])
+                )
+ 
+                display(s2_sr.getInfo())
+
                 s2_sr_median = s2_sr_col.median()
-
-                print(
-                    f"Year: {year}, Quarter: {quarter}, Start: {start_date}, End: {end_date}"
-                )
-
-                s2_sr_median = s2_sr_median.select(["B4", "B3", "B2"])
 
                 # Create a mask from the AOI: 1 inside the geometry, 0 outside.
                 aoi_mask = ee.Image.constant(1).clip(site.buffer(100)).mask()
@@ -139,8 +188,6 @@ def quarterly_composites(start_year, end_year, aoi):
                 # Convert to float32
                 s2_sr_median = s2_sr_median.toFloat()
 
-                # # export clipped result in Tiff
-                crs = "EPSG:4326"
 
                 img_name = f"S2_SR_{year}_Q{str(current_quarter).zfill(2)}_{name}_CLOUDS{CLOUD_FILTER}_CLDPRB{CLD_PRB_THRESH}_NIR_DRK_THRESH{NIR_DRK_THRESH}_CLD_PRJ_DIST{CLD_PRJ_DIST}_BUFFER{BUFFER}"
                 export_config = {
@@ -154,7 +201,7 @@ def quarterly_composites(start_year, end_year, aoi):
 
 
 # Example usage: Create quarterly composites between 2001 and 2003 for Malawi
-quarterly_composites(2001, 2003, AOI)
+quarterly_composites(2021, 2022, AOI)
 
 
 # %%
@@ -171,11 +218,13 @@ scale = 10
 folder = "malawi_imagery"
 
 # extra = dict(sat="Sen_TOA")    # low filter and threshold working well
-CLOUD_FILTER = 75
-CLD_PRB_THRESH = 25
-NIR_DRK_THRESH = 0.3
-CLD_PRJ_DIST = 3
-BUFFER = 120
+ Cloud filter parameters
+CLOUD_FILTER = 85  # Maximum image cloud cover percent allowed in image collection
+CLD_PRB_THRESH = 30  # Cloud probability (%); values greater than are considered cloud
+NIR_DRK_THRESH = 0.15
+CLD_PRJ_DIST = 1
+BUFFER = 50
+folder = "malawi_imagery"
 SCALE = 10
 # B3_min_threshold = 6000  # below 2000 masks urban as clouds
 
