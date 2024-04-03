@@ -27,7 +27,12 @@ fc_south = create_ee_polygon_from_geojson(f_south)
 # %%
 # Set parameters
 # bands = ["B2", "B3", "B4", "B8"]
-bands = ["B4", "B3", "B2"]
+bands = [
+    "B4",
+    "B3",
+    "B2",
+    "B8",
+]
 scale = 10
 # date_pattern = "mm_dd_yyyy"  # dd: day, MMM: month (JAN), y: year
 folder = "malawi_imagery"
@@ -39,7 +44,7 @@ NIR_DRK_THRESH = 0.3
 CLD_PRJ_DIST = 3
 BUFFER = 120
 SCALE = 10
-B3_min_threshold = 1400  # below 1200 masks soil as clouds
+# B3_min_threshold = 6000  # below 2000 masks urban as clouds
 
 
 # %% QUARTERLY COMPOSITES
@@ -60,6 +65,7 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
 
             print(f"Year: {year} Quarter: {dt.quarter}")
 
+            # filter by date and cloud cover
             collection = get_s2A_SR_sr_cld_collection(
                 site,
                 dt.first_of("quarter").strftime(r"%Y-%m-%d"),
@@ -71,6 +77,7 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
             if "B8" in bands:
                 collection = collection.map(mask_water)
 
+            # add cloud and shadow mask
             s2_sr = (
                 collection.map(
                     lambda image: add_cld_shdw_mask(
@@ -78,7 +85,7 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
                         CLD_PRB_THRESH=CLD_PRB_THRESH,
                         NIR_DRK_THRESH=NIR_DRK_THRESH,
                         SCALE=SCALE,
-                        B3_min_threshold=B3_min_threshold,
+                        # B3_min_threshold=B3_min_threshold,
                     )
                 )
                 .map(apply_cld_shdw_mask)
@@ -90,14 +97,14 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
             # Create a mask from the AOI: 1 inside the geometry, 0 outside.
             aoi_mask = ee.Image.constant(1).clip(site.buffer(100)).mask()
             s2_sr = s2_sr.updateMask(aoi_mask)
-
-            # s2_sr = geetools.batch.utils.convertDataType("uint16")(s2_sr)
-            # eprint(s2_sr)
+            s2_sr = s2_sr.select(["B4", "B3", "B2"])
+            # Convert to float32
+            s2_sr = s2_sr.toFloat()
 
             # # export clipped result in Tiff
             crs = "EPSG:4326"
 
-            img_name = f"S2_SR_{year}_Q{str(dt.quarter).zfill(2)}_{name}_CLOUDS{CLOUD_FILTER}_CLDPRB{CLD_PRB_THRESH}_NIR_DRK_THRESH{NIR_DRK_THRESH}_CLD_PRJ_DIST{CLD_PRJ_DIST}_BUFFER{BUFFER}_B3Thres_{B3_min_threshold}"
+            img_name = f"S2_SR_{year}_Q{str(dt.quarter).zfill(2)}_{name}_CLOUDS{CLOUD_FILTER}_CLDPRB{CLD_PRB_THRESH}_NIR_DRK_THRESH{NIR_DRK_THRESH}_CLD_PRJ_DIST{CLD_PRJ_DIST}_BUFFER{BUFFER}"
             export_config = {
                 "scale": scale,
                 "maxPixels": 50000000000,
