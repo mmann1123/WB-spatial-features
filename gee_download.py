@@ -88,7 +88,7 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
 
             # Mask AOI
             # Create a mask from the AOI: 1 inside the geometry, 0 outside.
-            aoi_mask = ee.Image.constant(1).clip(site).mask()
+            aoi_mask = ee.Image.constant(1).clip(site.buffer(100)).mask()
             s2_sr = s2_sr.updateMask(aoi_mask)
 
             # s2_sr = geetools.batch.utils.convertDataType("uint16")(s2_sr)
