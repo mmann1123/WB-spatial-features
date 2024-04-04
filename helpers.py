@@ -18,23 +18,32 @@ import json
 
 
 def mask_water(image):
-    """Mask water using NDWI index.
+    """Mask water using MNDWI index. MNDWI = (Green - SWIR) / (Green + SWIR)
     Args:
         image: ee.Image
     Returns:
         image: ee.Image
     """
-    # Calculate NDWI
-    #   McFeeters (1996):  For the second variant of the NDWI, another threshold can also be found in [20] that avoids creating false alarms in urban areas:
-    # < 0.3 - Non-water
-    # >= 0.3 - Water.
-    ndwi = image.normalizedDifference(
-        ["B3", "B8"]
-    )  # NDWI = (Green - NIR) / (Green + NIR)
+
+    ndwi = image.normalizedDifference(["B3", "B11"])
     # Create a water mask (1 for water, 0 for non-water)
-    water_mask = ndwi.gt(0.3)  # Threshold can be adjusted depending on the scene.
-    # Update the image's mask to exclude water
+    water_mask = ndwi.gt(0)
+
     return image.updateMask(water_mask.Not())
+
+
+def mask_water_from_SCL(image):
+    """Scene Classification Layer (SCL)  In the Scene Classification Layer, water bodies are typically classified under the class value of "6". This classification allows users to identify water pixels within the imagery. The SCL provides a convenient way to mask out water bodies when analyzing Sentinel-2 imagery for applications that require distinguishing between water and non-water pixels.
+
+    Args:
+        image: ee.Image
+    Returns:
+        image: ee.Image
+    """
+    # Create a water mask (1 for water, 0 for non-water)
+    not_water = image.select("SCL").neq(6)
+
+    return image.updateMask(not_water.Not())
 
 
 def add_cloud_bands(img, CLD_PRB_THRESH):
@@ -263,10 +272,6 @@ def apply_masks(img, CLD_PRB_THRESH=30, NIR_DRK_THRESH=0.15, CLD_PRJ_DIST=1, BUF
     not_cld_shdw = is_cld_shdw_masked.Not()
     img_masked = img.updateMask(not_cld_shdw)
 
-    # Mask water
-    ndwi = img.normalizedDifference(["B3", "B8"])
-    water_mask = ndwi.gt(0).Not()
-    img_masked = img_masked.updateMask(water_mask)
     return img_masked
 
 
