@@ -18,17 +18,33 @@ import json
 
 
 def mask_water(image):
+    """Mask water using NDWI index.
+    Args:
+        image: ee.Image
+    Returns:
+        image: ee.Image
+    """
     # Calculate NDWI
+    #   McFeeters (1996):  For the second variant of the NDWI, another threshold can also be found in [20] that avoids creating false alarms in urban areas:
+    # < 0.3 - Non-water
+    # >= 0.3 - Water.
     ndwi = image.normalizedDifference(
         ["B3", "B8"]
     )  # NDWI = (Green - NIR) / (Green + NIR)
     # Create a water mask (1 for water, 0 for non-water)
-    water_mask = ndwi.gt(0)  # Threshold can be adjusted depending on the scene.
+    water_mask = ndwi.gt(0.3)  # Threshold can be adjusted depending on the scene.
     # Update the image's mask to exclude water
     return image.updateMask(water_mask.Not())
 
 
 def add_cloud_bands(img, CLD_PRB_THRESH):
+    """Add cloud probability and cloud mask bands to image.
+    Args:
+        img: ee.Image
+        CLD_PRB_THRESH: int, cloud probability threshold
+    Returns:
+        ee.Image
+    """
     # Get s2cloudless image, subset the probability band.
     cld_prb = ee.Image(img.get("s2cloudless")).select("probability")
 
@@ -40,6 +56,15 @@ def add_cloud_bands(img, CLD_PRB_THRESH):
 
 
 def add_shadow_bands(img, NIR_DRK_THRESH, CLD_PRJ_DIST):
+    """Add cloud shadow band to image.
+    Args:
+        img: ee.Image
+        NIR_DRK_THRESH: float, NIR dark pixel threshold
+        CLD_PRJ_DIST: int, cloud projection distance
+    Returns:
+        ee.Image
+    """
+
     # Identify water pixels from the SCL band.
     not_water = img.select("SCL").neq(6)
 
@@ -61,7 +86,9 @@ def add_shadow_bands(img, NIR_DRK_THRESH, CLD_PRJ_DIST):
     cld_proj = (
         img.select("clouds")
         .directionalDistanceTransform(shadow_azimuth, CLD_PRJ_DIST * 10)
-        .reproject(**{"crs": img.select(0).projection(), "scale": 100})
+        .reproject(
+            **{"crs": img.select(0).projection(), "scale": 100}
+        )  # scale can also be 20
         .select("distance")
         .mask()
         .rename("cloud_transform")
@@ -83,6 +110,18 @@ def add_cld_shdw_mask(
     BUFFER=90,
     B3_min_threshold=1000,
 ):
+    """Add cloud and cloud shadow bands to image.
+    Args:
+        img: ee.Image
+        CLD_PRB_THRESH: int, cloud probability threshold
+        NIR_DRK_THRESH: float, NIR dark pixel threshold
+        SCALE: int, image scale in meters
+        CLD_PRJ_DIST: int, cloud projection distance
+        BUFFER: int, buffer distance around cloud objects
+    Returns:
+        ee.Image
+    """
+
     # Add cloud component bands.
 
     # print("Adding cloud bands using paremeters:")
@@ -123,6 +162,17 @@ def add_cld_shdw_mask(
 def get_s2A_SR_sr_cld_collection(
     aoi, start_date, end_date, product="S2_SR", CLOUD_FILTER=50
 ):
+    """Get Sentinel-2A surface reflectance, cloud probability, and cloud mask collection.
+    Args:
+        aoi: ee.Geometry, area of interest
+        start_date: str, start date in 'YYYY-MM-DD' format
+        end_date: str, end date in 'YYYY-MM-DD' format
+        product: str, Sentinel-2 product ID
+        CLOUD_FILTER: int, maximum cloud cover percentage
+    Returns:
+        ee.ImageCollection
+    """
+
     print("get_s2A_SR_sr_cld_collection")
     print("Cloud Filter:", CLOUD_FILTER)
 
@@ -158,6 +208,17 @@ def get_s2A_SR_sr_cld_collection(
 def get_s2A_SR_sr_cld_col(
     aoi, start_date, end_date, product="S2_SR_HARMONIZED", CLOUD_FILTER=30
 ):
+    """Get Sentinel-2A surface reflectance, cloud probability, and cloud mask collection.
+    Args:
+        aoi: ee.Geometry, area of interest
+        start_date: str, start date in 'YYYY-MM-DD' format
+        end_date: str, end date in 'YYYY-MM-DD' format
+        product: str, Sentinel-2 product ID
+        CLOUD_FILTER: int, maximum cloud cover percentage
+    Returns:
+        ee.ImageCollection
+    """
+
     # Import and filter S2 SR.
     s2_sr_col = (
         ee.ImageCollection("COPERNICUS/" + product)
@@ -187,7 +248,48 @@ def get_s2A_SR_sr_cld_col(
     )
 
 
+# Combine cloud and shadow mask, and add water mask
+def apply_masks(img, CLD_PRB_THRESH=30, NIR_DRK_THRESH=0.15, CLD_PRJ_DIST=1, BUFFER=50):
+    """Apply cloud and cloud shadow masks to image.
+    Args:
+        img: ee.Image
+        CLD_PRB_THRESH: int, cloud probability threshold
+        NIR_DRK_THRESH: float, NIR dark pixel threshold
+        CLD_PRJ_DIST: int, cloud projection distance
+        BUFFER: int, buffer distance around cloud objects
+    Returns:
+        ee.Image
+    """
+
+    img_cloud = add_cloud_bands(img, CLD_PRB_THRESH)
+    img_cloud_shadow = add_shadow_bands(img_cloud, NIR_DRK_THRESH, CLD_PRJ_DIST)
+    is_cld_shdw = (
+        img_cloud_shadow.select("clouds").add(img_cloud_shadow.select("shadows")).gt(0)
+    )
+    is_cld_shdw_masked = (
+        is_cld_shdw.focal_min(2)
+        .focal_max(BUFFER * 2 / 20)
+        .reproject(**{"crs": img.select([0]).projection(), "scale": 20})
+        .rename("cloudmask")
+    )
+    not_cld_shdw = is_cld_shdw_masked.Not()
+    img_masked = img.updateMask(not_cld_shdw)
+
+    # Mask water
+    ndwi = img.normalizedDifference(["B3", "B8"])
+    water_mask = ndwi.gt(0).Not()
+    img_masked = img_masked.updateMask(water_mask)
+    return img_masked
+
+
 def apply_cld_shdw_mask(img):
+    """Apply cloud and cloud shadow masks to image.
+    Args:
+        img: ee.Image
+    Returns:
+        ee.Image
+    """
+
     # Subset the cloudmask band and invert it so clouds/shadow are 0, else 1.
     not_cld_shdw = img.select("cloudmask").Not()
 
