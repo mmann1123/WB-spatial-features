@@ -85,13 +85,6 @@ def add_cld_shdw_mask(
 ):
     # Add cloud component bands.
 
-    # print("Adding cloud bands using paremeters:")
-    # print(f"CLD_PRB_THRESH: {CLD_PRB_THRESH}")
-    # print(f"NIR_DRK_THRESH: {NIR_DRK_THRESH}")
-    # print(f"SCALE: {SCALE}")
-    # print(f"CLD_PRJ_DIST: {CLD_PRJ_DIST}")
-    # print(f"BUFFER: {BUFFER}")
-
     img_cloud = add_cloud_bands(img, CLD_PRB_THRESH)
 
     # Add cloud shadow component bands.
@@ -107,13 +100,8 @@ def add_cld_shdw_mask(
     is_cld_shdw = (
         is_cld_shdw.focalMin(2)
         .focalMax(BUFFER * 2 / SCALE)
-        .reproject(**{"crs": img.select([0]).projection(), "scale": SCALE})
+        .reproject(**{"crs": img.select([0]).projection(), "scale": 20})
         .rename("cloudmask")
-    )
-
-    # mask out all pixels where B3 is greater than 1000 as clouds
-    img_cloud_shadow = img_cloud_shadow.updateMask(
-        img_cloud_shadow.select("B3").lt(B3_min_threshold)
     )
 
     # Add the final cloud-shadow mask to the image.
