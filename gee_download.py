@@ -86,7 +86,7 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
             # Create a mask from the AOI: 1 inside the geometry, 0 outside.
             aoi_mask = ee.Image.constant(1).clip(site.buffer(300)).mask()
             s2_sr = s2_sr.updateMask(aoi_mask)
-            s2_sr = s2_sr.select(["B4", "B3", "B2"])
+            s2_sr = s2_sr.select(bands)
             # Convert to float32
             s2_sr = s2_sr.toFloat()
 
@@ -103,89 +103,89 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
 
 # %% Visualize
 
-# Import the folium library.
-import folium
+# # Import the folium library.
+# import folium
 
 
-# Define a method for displaying Earth Engine image tiles to a folium map.
-def add_ee_layer(
-    self, ee_image_object, vis_params, name, show=True, opacity=1, min_zoom=0
-):
-    map_id_dict = ee.Image(ee_image_object).getMapId(vis_params)
-    folium.raster_layers.TileLayer(
-        tiles=map_id_dict["tile_fetcher"].url_format,
-        attr='Map Data &copy; <a href="https://earthengine.google.com/">Google Earth Engine</a>',
-        name=name,
-        show=show,
-        opacity=opacity,
-        min_zoom=min_zoom,
-        overlay=True,
-        control=True,
-    ).add_to(self)
+# # Define a method for displaying Earth Engine image tiles to a folium map.
+# def add_ee_layer(
+#     self, ee_image_object, vis_params, name, show=True, opacity=1, min_zoom=0
+# ):
+#     map_id_dict = ee.Image(ee_image_object).getMapId(vis_params)
+#     folium.raster_layers.TileLayer(
+#         tiles=map_id_dict["tile_fetcher"].url_format,
+#         attr='Map Data &copy; <a href="https://earthengine.google.com/">Google Earth Engine</a>',
+#         name=name,
+#         show=show,
+#         opacity=opacity,
+#         min_zoom=min_zoom,
+#         overlay=True,
+#         control=True,
+#     ).add_to(self)
 
 
-# Add the Earth Engine layer method to folium.
-folium.Map.add_ee_layer = add_ee_layer
+# # Add the Earth Engine layer method to folium.
+# folium.Map.add_ee_layer = add_ee_layer
 
 
-def display_cloud_layers(col):
-    # Mosaic the image collection.
-    img = col.mosaic()
+# def display_cloud_layers(col):
+#     # Mosaic the image collection.
+#     img = col.mosaic()
 
-    # Subset layers and prepare them for display.
-    clouds = img.select("clouds").selfMask()
-    shadows = img.select("shadows").selfMask()
-    dark_pixels = img.select("dark_pixels").selfMask()
-    probability = img.select("probability")
-    cloudmask = img.select("cloudmask").selfMask()
-    cloud_transform = img.select("cloud_transform")
+#     # Subset layers and prepare them for display.
+#     clouds = img.select("clouds").selfMask()
+#     shadows = img.select("shadows").selfMask()
+#     dark_pixels = img.select("dark_pixels").selfMask()
+#     probability = img.select("probability")
+#     cloudmask = img.select("cloudmask").selfMask()
+#     cloud_transform = img.select("cloud_transform")
 
-    # Create a folium map object.
-    center = AOI.centroid(10).coordinates().reverse().getInfo()
-    m = folium.Map(location=center, zoom_start=12)
+#     # Create a folium map object.
+#     center = AOI.centroid(10).coordinates().reverse().getInfo()
+#     m = folium.Map(location=center, zoom_start=12)
 
-    # Add layers to the folium map.
-    m.add_ee_layer(
-        img,
-        {"bands": ["B4", "B3", "B2"], "min": 0, "max": 2500, "gamma": 1.1},
-        "S2 image",
-        True,
-        1,
-        9,
-    )
-    m.add_ee_layer(
-        probability, {"min": 0, "max": 100}, "probability (cloud)", False, 1, 9
-    )
-    m.add_ee_layer(clouds, {"palette": "e056fd"}, "clouds", False, 1, 9)
-    m.add_ee_layer(
-        cloud_transform,
-        {"min": 0, "max": 1, "palette": ["white", "black"]},
-        "cloud_transform",
-        False,
-        1,
-        9,
-    )
-    m.add_ee_layer(dark_pixels, {"palette": "orange"}, "dark_pixels", False, 1, 9)
-    m.add_ee_layer(shadows, {"palette": "yellow"}, "shadows", False, 1, 9)
-    m.add_ee_layer(cloudmask, {"palette": "orange"}, "cloudmask", True, 0.5, 9)
+#     # Add layers to the folium map.
+#     m.add_ee_layer(
+#         img,
+#         {"bands": ["B4", "B3", "B2"], "min": 0, "max": 2500, "gamma": 1.1},
+#         "S2 image",
+#         True,
+#         1,
+#         9,
+#     )
+#     m.add_ee_layer(
+#         probability, {"min": 0, "max": 100}, "probability (cloud)", False, 1, 9
+#     )
+#     m.add_ee_layer(clouds, {"palette": "e056fd"}, "clouds", False, 1, 9)
+#     m.add_ee_layer(
+#         cloud_transform,
+#         {"min": 0, "max": 1, "palette": ["white", "black"]},
+#         "cloud_transform",
+#         False,
+#         1,
+#         9,
+#     )
+#     m.add_ee_layer(dark_pixels, {"palette": "orange"}, "dark_pixels", False, 1, 9)
+#     m.add_ee_layer(shadows, {"palette": "yellow"}, "shadows", False, 1, 9)
+#     m.add_ee_layer(cloudmask, {"palette": "orange"}, "cloudmask", True, 0.5, 9)
 
-    # Add a layer control panel to the map.
-    m.add_child(folium.LayerControl())
+#     # Add a layer control panel to the map.
+#     m.add_child(folium.LayerControl())
 
-    # Display the map.
-    display(m)
+#     # Display the map.
+#     display(m)
 
 
-# %%
-s2_sr_cld_col_eval_disp = s2_sr_cld_col_eval.map(add_cld_shdw_mask)
+# # %%
+# s2_sr_cld_col_eval_disp = s2_sr_cld_col_eval.map(add_cld_shdw_mask)
 
-display_cloud_layers(s2_sr_cld_col_eval_disp)
+# display_cloud_layers(s2_sr_cld_col_eval_disp)
 
-# def quarterly_composites(start_year, end_year, aoi):
-#     for site, name in zip([fc_north, fc_south], ["north", "south"]):
-#         if name == "north":
-#             continue
-#         for year in range(start_year, end_year + 1)[0:1]:
+# # def quarterly_composites(start_year, end_year, aoi):
+# #     for site, name in zip([fc_north, fc_south], ["north", "south"]):
+# #         if name == "north":
+# #             continue
+# #         for year in range(start_year, end_year + 1)[0:1]:
 #             for quarter in range(1, 5)[0:1]:
 
 #                 start_date, end_date = pendulum.datetime(
