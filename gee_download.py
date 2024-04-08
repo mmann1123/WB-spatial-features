@@ -25,31 +25,25 @@ fc_south = create_ee_polygon_from_geojson(f_south)
 
 # %%
 # Set parameters
-bands = [
-    "B4",
-    "B3",
-    "B2",
-    "B8",
-]
+bands = ["B2", "B3", "B4", "B8"]
 
 # Cloud filter parameters
-CLOUD_FILTER = 85  # Maximum image cloud cover percent allowed in image collection
-CLD_PRB_THRESH = 30  # Cloud probability (%); values greater than are considered cloud
-NIR_DRK_THRESH = 0.2  # 0,15 works pretty well
-CLD_PRJ_DIST = 1
-BUFFER = 50
+CLOUD_FILTER = 75  # 75  Maximum image cloud cover percent allowed in image collection
+CLD_PRB_THRESH = 30  # 30 Cloud prob(%); values greater than are considered cloud
+NIR_DRK_THRESH = 0.2  #  0.2  Minimum NIR refl to be considered potential cloud shadow
+
+CLD_PRJ_DIST = 2  # 2 Maximum distance (km) to search for cloud shadows from cloud edges
+BUFFER = 40  # was 40-50 A buffer around the AOI to apply cloud mask
 folder = "malawi_imagery"
 SCALE = 10
 
 
 # %% QUARTERLY COMPOSITES
 for site, name in zip([fc_north, fc_south], ["north", "south"]):
-    if name == "north":
-        continue
 
     q_finished = []
-    for year in list(range(2021, 2022)):  # 2024
-        for month in list(range(1, 4)):  # 1, 13
+    for year in list(range(2021, 2024)):  # 2024
+        for month in list(range(1, 13)):
 
             dt = pendulum.datetime(year, month, 1)
             # avoid repeating same quarter
@@ -71,10 +65,6 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
                 CLOUD_FILTER=CLOUD_FILTER,
             )
 
-            # mask water if B8 in bands
-            if "B8" in bands:
-                collection = collection.map(mask_water)
-
             # add cloud and shadow mask
             s2_sr = (
                 collection.map(
@@ -82,7 +72,9 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
                         image,
                         CLD_PRB_THRESH=CLD_PRB_THRESH,
                         NIR_DRK_THRESH=NIR_DRK_THRESH,
+                        CLD_PRJ_DIST=CLD_PRJ_DIST,
                         SCALE=SCALE,
+                        BUFFER=BUFFER,
                     )
                 )
                 .map(apply_cld_shdw_mask)
@@ -99,9 +91,9 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
             s2_sr = s2_sr.toFloat()
 
             # # export clipped result in Tiff
-            img_name = f"S2_SR_{year}_Q{str(dt.quarter).zfill(2)}_{name}_CLOUDS{CLOUD_FILTER}_CLDPRB{CLD_PRB_THRESH}_NIR_DRK_THRESH{NIR_DRK_THRESH}_CLD_PRJ_DIST{CLD_PRJ_DIST}_BUFFER{BUFFER}"
+            img_name = f"S2_SR_{year}_Q{str(dt.quarter).zfill(2)}_{name}"
             export_config = {
-                "scale": scale,
+                "scale": SCALE,
                 "maxPixels": 50000000000,
                 "driveFolder": folder,
                 "region": site,
@@ -109,7 +101,7 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
             task = ee.batch.Export.image(s2_sr, img_name, export_config)
             task.start()
 
-# %%
+# %% Visualize
 
 # Import the folium library.
 import folium
