@@ -36,18 +36,28 @@ unique_quarters
 
 # %%
 !mkdir -p mosaic
+import geopandas as gpd
 from numpy import nan
+from rasterio.coords import BoundingBox
 missing_data = nan
+
+bounds = BoundingBox(*gpd.read_file('./boundaries/south_adm2.geojson').total_bounds)
 
 # Print the unique codes
 for quarter in unique_quarters:
-        print("working on grid", grid)
+        print("working on grid", quarter)
 
         a_quarter = sorted([f for f in south_tiles if quarter in f])
         print('files:' , a_quarter)
-        with gw.open(a_quarter, mosaic=True,overlap='max',nodata=missing_data) as src:
-            display(src)
-            # src.save(num_workers=6)
+        with gw.config.update(ref_bounds =bounds):
+            with gw.open(a_quarter, mosaic=True,overlap='max' ) as src:
+
+                gw.save(src, filename=f'./mosaic/S2_SR_{quarter}_south.tif',
+                                nodata=nan,
+                                overwrite=True,
+                                num_workers=6, 
+                                compress='lzw')
+#%%
         
 
 # # %% interpolate missing doesn't work with multi band images
