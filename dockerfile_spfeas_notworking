@@ -1,0 +1,62 @@
+FROM ubuntu:22.04
+
+USER root
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update -y && apt upgrade -y && \
+    apt install -y software-properties-common && \
+    add-apt-repository ppa:ubuntugis/ppa && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt update -y && apt install -y \
+    geotiff-bin \
+    git \
+    libgdal-dev \
+    libgl1 \
+    libspatialindex-dev \
+    wget \
+    g++ 
+# gdal-bin=2.* \
+# libgdal-dev=2.* \
+
+# Install build dependencies
+RUN apt-get install -y build-essential wget
+
+# Download and unpack the source code
+RUN wget http://download.osgeo.org/gdal/2.4.0/gdal-2.4.0.tar.gz && \
+    tar -xzf gdal-2.4.0.tar.gz && \
+    cd gdal-2.4.0 && \
+    ./configure && \
+    make && \
+    make install
+
+# Set environment variables so the GDAL installation is found
+ENV LD_LIBRARY_PATH=/usr/local/lib
+
+
+RUN apt install -y \
+    python2.7 \
+    python2.7-dev \
+    python-pip  
+
+RUN  ln -s /usr/bin/python2.7 /usr/bin/python && \
+    ln -s /usr/bin/pip2 /usr/bin/pip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip2 install  cython==0.26 numpy  GDAL==2 #pip-tools  #rtree
+RUN git clone https://github.com/jgrss/mpglue.git
+
+RUN pip2 install future deprecation retrying  numpy scipy matplotlib scikit-learn scikit-image pandas beautifulsoup4 opencv-python rtree fiona numexpr
+
+# RUN cd mpglue && python setup.py build && python setup.py install
+RUN wget https://github.com/jgrss/mpglue/archive/refs/tags/0.2.14.tar.gz && ls && pip install ./0.2.14.tar.gz
+
+# delete folder mpglue
+RUN rm -rf mpglue
+
+# RUN git clone https://github.com/mmann1123/mpglue.git && cd mpglue && python testing/sample_tests.py
+RUN pip install   cython==0.29
+RUN git clone https://github.com/jgrss/spfeas.git && cd spfeas && python setup.py build && python setup.py install 
+
+
+CMD ["/bin/bash"]
