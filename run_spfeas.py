@@ -1,3 +1,4 @@
+# %%
 import os
 from glob import glob
 
@@ -7,7 +8,7 @@ os.chdir(base_path)
 
 # make folder to hold batch scripts
 batch_script_path = os.path.join(base_path, "batch_scripts")
-os.mkdir(batch_script_path)
+os.makedirs(batch_script_path, exist_ok=True)
 
 # find all input images to process
 imagery_folder = os.path.join(base_path, "mosaic")
@@ -15,7 +16,8 @@ images = glob(f"{imagery_folder}/*.tif")
 
 # set output folder
 output_folder = os.path.join(base_path, "spfeas_outputs")
-os.mkdir(os.path.join(output_folder, "features"))
+os.makedirs(output_folder, exist_ok=True)
+os.makedirs(os.path.join(output_folder, "features"), exist_ok=True)
 
 
 for image in images:
@@ -39,36 +41,34 @@ for image in images:
 
             f.write(
                 f"""#!/bin/bash
-            SBATCH -p defq
-            SBATCH -J spfeas_{feature}_run
-            SBATCH --export=NONE
-            SBATCH -t 3-15:00:00
-            SBATCH --mail-type=ALL
-            SBATCH --mail-user=mmann1123@gwu.edu
-            # add error log
-            SBATCH -e {batch_script_path}/{feature}.err
-            # add output log
-            SBATCH -o {batch_script_path}/{feature}.out
+#SBATCH -p defq
+#SBATCH -J spfeas_{feature}_run
+#SBATCH --export=NONE
+#SBATCH -t 5-00:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=mmann1123@gwu.edu
+#SBATCH -e {batch_script_path}/{feature}.err
+#SBATCH -o {batch_script_path}/{feature}.out
 
 
-            export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
-            source activate Ryan_CondaEnvP2.7
+export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
+source activate Ryan_CondaEnvP2.7
 
-            # output folders will be created automatically
-            # scales 3, 5, 7
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_mean')} --block 1 --scales 3 5 7 --tr mean
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_gabor')} --vis-order bgrn --block 1 --scales 3 5 7 --tr gabor
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_hog')} --vis-order bgrn --block 1 --scales 3 5 7 --tr hog
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lac')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lac
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lbpm')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lbpm
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_ndvi')} --vis-order bgrn --block 1 --scales 3 5 7 --tr ndvi
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_pantex')} --vis-order bgrn --block 1 --scales 3 5 7 --tr pantex
+# output folders will be created automatically
+# scales 3, 5, 7
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_mean')} --block 1 --scales 3 5 7 --tr mean
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_gabor')} --vis-order bgrn --block 1 --scales 3 5 7 --tr gabor
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_hog')} --vis-order bgrn --block 1 --scales 3 5 7 --tr hog
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lac')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lac
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lbpm')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lbpm
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_ndvi')} --vis-order bgrn --block 1 --scales 3 5 7 --tr ndvi
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_pantex')} --vis-order bgrn --block 1 --scales 3 5 7 --tr pantex
 
-            # scales 31, 51, 71
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_sfs')} --vis-order bgrn --block 1 --scales 31 51 71 --tr sfs
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_fourier')} --vis-order bgrn --block 1 --scales 31 51 71 --tr fourier
-            spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_orb')} --vis-order bgrn --block 1 --scales 31 51 71 --tr orb
-            """
+# scales 31, 51, 71
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_sfs')} --vis-order bgrn --block 1 --scales 31 51 71 --tr sfs
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_fourier')} --vis-order bgrn --block 1 --scales 31 51 71 --tr fourier
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_orb')} --vis-order bgrn --block 1 --scales 31 51 71 --tr orb
+"""
             )
 
 # jobs were submited subset at time
@@ -103,3 +103,5 @@ for image in images:
 # awscpu         up   infinite     10  idle~ awscpu-cpunode-[0-9]
 # awsgpu*        up   infinite      2  down% awsgpu-gpunode-[8-9]
 # awsgpu*        up   infinite      8  idle~ awsgpu-gpunode-[0-7]
+
+# %%
