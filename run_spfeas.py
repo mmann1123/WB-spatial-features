@@ -5,7 +5,7 @@ import os
 from glob import glob
 
 # base path
-base_path = "/CCAS/groups/engstromgrp/mike"
+base_path = "/CCAS/groups/engstromgrp/mike"  # "/mnt/bigdrive/Dropbox/wb_malawi"
 os.chdir(base_path)
 
 # make folder to hold batch scripts
