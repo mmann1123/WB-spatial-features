@@ -23,6 +23,23 @@ os.makedirs(output_folder, exist_ok=True)
 os.makedirs(os.path.join(output_folder, "features"), exist_ok=True)
 
 
+with open(f"{base_path}/run_all_spfeas_batch_files.sh", "w") as f:
+
+    f.write(
+        f"""#!/bin/bash
+
+# Set the folder containing the .sh files
+folder={batch_script_path}
+
+# Loop through each .sh file in the folder
+for file in "$folder"/*.sh; do
+    # Submit the .sh file to Slurm
+    sbatch "$file"
+done
+"""
+    )
+
+
 for image in images:
     for feature in [
         "fourier",
