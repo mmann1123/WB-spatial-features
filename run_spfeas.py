@@ -40,7 +40,7 @@ for image in images:
         # get file name without extension
         image_name = os.path.splitext(os.path.basename(image))[0]
 
-        with open(f"{batch_script_path}/{feature}.sh", "w") as f:
+        with open(f"{batch_script_path}/{image_name}_{feature}.sh", "w") as f:
 
             f.write(
                 f"""#!/bin/bash
