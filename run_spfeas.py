@@ -45,13 +45,13 @@ for image in images:
             f.write(
                 f"""#!/bin/bash
 #SBATCH -p defq
-#SBATCH -J spfeas_{feature}_run
+#SBATCH -J spfeas_{image_name}_{feature}_run
 #SBATCH --export=NONE
 #SBATCH -t 5-00:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mmann1123@gwu.edu
-#SBATCH -e {batch_script_path}/{feature}.err
-#SBATCH -o {batch_script_path}/{feature}.out
+#SBATCH -e {batch_script_path}/{image_name}_{feature}.err
+#SBATCH -o {batch_script_path}/{image_name}_{feature}.out
 
 
 export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
