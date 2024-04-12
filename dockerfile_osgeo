@@ -1,0 +1,57 @@
+# Start from the OSGeo GDAL image
+FROM osgeo/gdal:ubuntu-small-3.0.3
+# osgeo/gdal:ubuntu-full-v2.5.0RC1
+
+# Use root user for installations
+USER root
+
+# Avoid prompts from apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update apt and install other necessary tools
+RUN apt update -y && apt upgrade -y && \
+    apt install -y \
+    software-properties-common \
+    geotiff-bin \
+    git \
+    libgl1 \
+    libspatialindex-dev \
+    wget \
+    g++ \
+    # python2.7 \
+    # python2.7-dev \
+    python3.6 \
+    python3.6-dev \
+    python3-pip && \
+    ln -sf /usr/bin/python3.6 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+# ln -sf /usr/bin/python2.7 /usr/bin/python && \
+# ln -sf /usr/bin/pip2 /usr/bin/pip && \
+
+
+# Install Python packages
+# Adjust versions as needed, considering the base image GDAL version
+RUN pip install skbuild cython==0.26 numpy GDAL==3.1.1
+#gdal 2.5.0
+
+# # Clone and install mpglue
+# RUN wget https://github.com/jgrss/mpglue/archive/refs/tags/0.2.14.tar.gz && \
+#     pip install ./0.2.14.tar.gz
+RUN pip install scipy==1.1.0
+# RUN git clone https://github.com/jgrss/mpglue.git && cd mpglue && python setup.py build && python setup.py install
+RUN wget https://github.com/jgrss/mpglue/releases/download/0.2.14/MpGlue-0.2.14-cp36-cp36m-linux_x86_64.whl
+RUN pip install MpGlue-0.2.14-cp36-cp36m-linux_x86_64.whl
+
+# Install additional Python packages
+RUN pip install future deprecation retrying numpy scipy matplotlib scikit-learn scikit-image pandas beautifulsoup4 opencv-python rtree fiona numexpr
+
+# Clone and install spfeas
+RUN git clone https://github.com/jgrss/spfeas.git && \
+    cd spfeas && \
+    python setup.py build && \
+    python setup.py install
+
+# Set the default command
+CMD ["/bin/bash"]
