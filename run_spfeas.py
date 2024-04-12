@@ -1,4 +1,6 @@
 # %%
+# run from terminal as
+# python run_spfeas.py
 import os
 from glob import glob
 
@@ -13,6 +15,7 @@ os.makedirs(batch_script_path, exist_ok=True)
 # find all input images to process
 imagery_folder = os.path.join(base_path, "mosaic")
 images = glob(f"{imagery_folder}/*.tif")
+print("processing images:", images)
 
 # set output folder
 output_folder = os.path.join(base_path, "spfeas_outputs")
