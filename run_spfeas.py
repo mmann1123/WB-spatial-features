@@ -59,18 +59,18 @@ source activate Ryan_CondaEnvP2.7
 
 # output folders will be created automatically
 # scales 3, 5, 7
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_mean')} --block 1 --scales 3 5 7 --tr mean --overwrite True
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_gabor')} --vis-order bgrn --block 1 --scales 3 5 7 --tr gabor --overwrite True
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_hog')} --vis-order bgrn --block 1 --scales 3 5 7 --tr hog --overwrite True
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lac')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lac --overwrite True
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lbpm')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lbpm --overwrite True
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_ndvi')} --vis-order bgrn --block 1 --scales 3 5 7 --tr ndvi --overwrite True
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_pantex')} --vis-order bgrn --block 1 --scales 3 5 7 --tr pantex --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_mean')} --block 1 --scales 3 5 7 --tr mean --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_gabor')} --vis-order bgrn --block 1 --scales 3 5 7 --tr gabor --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_hog')} --vis-order bgrn --block 1 --scales 3 5 7 --tr hog --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lac')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lac --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lbpm')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lbpm --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_ndvi')} --vis-order bgrn --block 1 --scales 3 5 7 --tr ndvi --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_pantex')} --vis-order bgrn --block 1 --scales 3 5 7 --tr pantex --overwrite
 
 # scales 31, 51, 71
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_sfs')} --vis-order bgrn --block 1 --scales 31 51 71 --tr sfs --overwrite True
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_fourier')} --vis-order bgrn --block 1 --scales 31 51 71 --tr fourier --overwrite True
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_orb')} --vis-order bgrn --block 1 --scales 31 51 71 --tr orb --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_sfs')} --vis-order bgrn --block 1 --scales 31 51 71 --tr sfs --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_fourier')} --vis-order bgrn --block 1 --scales 31 51 71 --tr fourier --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_orb')} --vis-order bgrn --block 1 --scales 31 51 71 --tr orb --overwrite
 """
             )
 
