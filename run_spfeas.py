@@ -1,6 +1,8 @@
 # %%
 # run from terminal as
 # python run_spfeas.py
+# then submit all the batch scripts using
+# bash run_all_spfeas_batch_files.sh
 import os
 from glob import glob
 
