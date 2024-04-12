@@ -40,18 +40,18 @@ for image in images:
         # get file name without extension
         image_name = os.path.splitext(os.path.basename(image))[0]
 
-        with open(f"{batch_script_path}/{image_name}_{feature}.sh", "w") as f:
+        with open(f"{batch_script_path}/{image_name}.sh", "w") as f:
 
             f.write(
                 f"""#!/bin/bash
 #SBATCH -p defq
-#SBATCH -J spfeas_{image_name}_{feature}_run
+#SBATCH -J spfeas_{image_name}_run
 #SBATCH --export=NONE
 #SBATCH -t 5-00:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mmann1123@gwu.edu
-#SBATCH -e {batch_script_path}/{image_name}_{feature}.err
-#SBATCH -o {batch_script_path}/{image_name}_{feature}.out
+#SBATCH -e {batch_script_path}/{image_name}.err
+#SBATCH -o {batch_script_path}/{image_name}.out
 
 
 export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
@@ -59,18 +59,18 @@ source activate Ryan_CondaEnvP2.7
 
 # output folders will be created automatically
 # scales 3, 5, 7
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_mean')} --block 1 --scales 3 5 7 --tr mean
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_gabor')} --vis-order bgrn --block 1 --scales 3 5 7 --tr gabor
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_hog')} --vis-order bgrn --block 1 --scales 3 5 7 --tr hog
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lac')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lac
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lbpm')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lbpm
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_ndvi')} --vis-order bgrn --block 1 --scales 3 5 7 --tr ndvi
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_pantex')} --vis-order bgrn --block 1 --scales 3 5 7 --tr pantex
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_mean')} --block 1 --scales 3 5 7 --tr mean --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_gabor')} --vis-order bgrn --block 1 --scales 3 5 7 --tr gabor --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_hog')} --vis-order bgrn --block 1 --scales 3 5 7 --tr hog --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lac')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lac --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lbpm')} --vis-order bgrn --block 1 --scales 3 5 7 --tr lbpm --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_ndvi')} --vis-order bgrn --block 1 --scales 3 5 7 --tr ndvi --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_pantex')} --vis-order bgrn --block 1 --scales 3 5 7 --tr pantex --overwrite True
 
 # scales 31, 51, 71
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_sfs')} --vis-order bgrn --block 1 --scales 31 51 71 --tr sfs
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_fourier')} --vis-order bgrn --block 1 --scales 31 51 71 --tr fourier
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_orb')} --vis-order bgrn --block 1 --scales 31 51 71 --tr orb
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_sfs')} --vis-order bgrn --block 1 --scales 31 51 71 --tr sfs --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_fourier')} --vis-order bgrn --block 1 --scales 31 51 71 --tr fourier --overwrite True
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_orb')} --vis-order bgrn --block 1 --scales 31 51 71 --tr orb --overwrite True
 """
             )
 
