@@ -69,3 +69,61 @@ feature_bands_table = {
         "max_ratio_of_orthogonal_angles",
     ],
 }
+
+# %%
+partitions = {
+    "defq": "14-00:00:0",
+    "short": "1-00:00:00",
+    "short-384gb": "1-00:00:00",
+    "tiny": "4:00:00",
+    "nano": "30:00",
+    "384gb": "14-00:00:0",
+    "highMem": "14-00:00:0",
+    "highThru": "7-00:00:00",
+    "graphical": "4:00:00",
+    "debug": "4:00:00",
+    "debug-cpu": "4:00:00",
+    "debug-gpu": "4:00:00",
+    "ultra-gpu": "7-00:00:00",
+    "large-gpu": "7-00:00:00",
+    "med-gpu": "7-00:00:00",
+    "small-gpu": "7-00:00:00",
+    "awscpu": "infinite",
+    "awsgpu*": "infinite",
+}
+
+
+# create function that checks partition name and time limit against the partitions dictionary
+# where the time limit is coverted to seconds and checked if it is less than the time limit
+def check_partition_time(partition, time_limit_requested):
+    if len(time_limit_requested) < 11:
+        raise ValueError(
+            "Time limit must be in the format DD-HH:MM:SS for zero days use 00-HH:MM:SS"
+        )
+
+    if partition in partitions:
+        time_limit_seconds = convert_time_to_seconds(partitions[partition])
+        if time_limit_seconds > convert_time_to_seconds(time_limit_requested):
+            print("Passed slurm checks")
+            pass
+        else:
+            raise ValueError(f"Allocation time is too long: {partitions}")
+    else:
+        raise ValueError(
+            f"Partition not found in partitions dictionary: {partitions.keys()}"
+        )
+
+
+# write a function that converts 7-01:05:00 to seconds
+def convert_time_to_seconds(time):
+    days, rest = time.split("-")
+    hours, minutes, seconds = rest.split(":")
+    days = int(days)
+    hours = int(hours)
+    minutes = int(minutes)
+    seconds = int(seconds)
+    total_seconds = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
+    return total_seconds
+
+
+# %%

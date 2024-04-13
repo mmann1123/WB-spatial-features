@@ -6,7 +6,7 @@
 # bash run_all_spfeas_batch_files.sh
 import os
 from glob import glob
-
+from functions import *  # import helper functions
 
 ############### EDIT THE FOLLOWING ################
 imagery_folder = (
@@ -14,8 +14,15 @@ imagery_folder = (
 )
 
 band_order = "bgrn"  # band order for spfeas
+partition = "defq"  # partition for slurm
+time_request = "02-12:35:00"  # time request for slurm DD-HH:MM:SS
+email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 ################ Don't edit below this line ################
+
+
+check_partition_time(partition, time_request)
+
 
 # throw error if band order is not correct
 if band_order not in ["bgrn", "rgbn", "rgb", "bgr"]:
@@ -80,12 +87,12 @@ for image in images:
 
             f.write(
                 f"""#!/bin/bash
-#SBATCH -p defq
+#SBATCH -p {partition}
 #SBATCH -J spfeas_{image_name}_run
 #SBATCH --export=NONE
-#SBATCH -t 5-00:00:00
+#SBATCH -t {time_request}
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=mmann1123@gwu.edu
+#SBATCH --mail-user={email} 
 #SBATCH -e {batch_script_path}/{image_name}.err
 #SBATCH -o {batch_script_path}/{image_name}.out
 
@@ -124,5 +131,6 @@ All output feature vrts and images will be writen to: {output_folder}/features
 
     """
 )
+print("All batch scripts written")
 
 # %%
