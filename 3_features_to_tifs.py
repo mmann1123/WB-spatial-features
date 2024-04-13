@@ -150,7 +150,7 @@ with Pool() as p:
 
 
 print(
-    f"""############# IMPORANT ################## 
+    f"""\n\n############# IMPORANT ################## 
 #############################################
 All batch scripts will be written to folder: {batch_script_path}
 
