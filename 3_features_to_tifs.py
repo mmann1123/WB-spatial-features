@@ -3,6 +3,28 @@
 import os
 from glob import glob
 
+
+# need to generate the following code
+# # FOURIER
+# # scale: 31, output: mean
+# gdal_translate -b 1 -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" ../outputs//features/malawi_2021_09_01_2021_12_01_fourier/south_2021_09_01_2021_12_01__BD1_BK1_SC31-51-71_TRfourier.vrt ../outputs/band/fourier_2021_09_01_2021_12_01/fourier_sc31_mean.tif
+
+# # scale: 31, output: variance
+# gdal_translate -b 2 -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" ../outputs//features/malawi_2021_09_01_2021_12_01_fourier/south_2021_09_01_2021_12_01__BD1_BK1_SC31-51-71_TRfourier.vrt ../outputs/band/fourier_2021_09_01_2021_12_01/fourier_sc31_variance.tif
+
+# # scale: 51, output: mean
+# gdal_translate -b 3 -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" ../outputs//features/malawi_2021_09_01_2021_12_01_fourier/south_2021_09_01_2021_12_01__BD1_BK1_SC31-51-71_TRfourier.vrt ../outputs/band/fourier_2021_09_01_2021_12_01/fourier_sc51_mean.tif
+
+# # scale: 51, output: variance
+# gdal_translate -b 4 -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" ../outputs//features/malawi_2021_09_01_2021_12_01_fourier/south_2021_09_01_2021_12_01__BD1_BK1_SC31-51-71_TRfourier.vrt ../outputs/band/fourier_2021_09_01_2021_12_01/fourier_sc51_variance.tif
+
+# # scale: 71, output: mean
+# gdal_translate -b 5 -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" ../outputs//features/malawi_2021_09_01_2021_12_01_fourier/south_2021_09_01_2021_12_01__BD1_BK1_SC31-51-71_TRfourier.vrt ../outputs/band/fourier_2021_09_01_2021_12_01/fourier_sc71_mean.tif
+
+# # scale: 71, output: variance
+# gdal_translate -b 6 -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" ../outputs//features/malawi_2021_09_01_2021_12_01_fourier/south_2021_09_01_2021_12_01__BD1_BK1_SC31-51-71_TRfourier.vrt ../outputs/band/fourier_2021_09_01_2021_12_01/fourier_sc71_variance.tif
+
+
 # Set directory that contains all the feature VRTs (the parent output folder) *
 # Make sure there is end slash
 # NEED TO EDIT THIS LINE
