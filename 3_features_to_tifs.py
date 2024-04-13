@@ -17,10 +17,10 @@ from multiprocessing import Pool
 # path to folder containing outputs from spfeas (e.g. folders ending in _mean _gabor etc),
 # should be  {imagery_folder}/features from 2_run_spfeas.py
 
-feature_vrt_output_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"  # "/mnt/bigdrive/Dropbox/wb_malawi/test"  #   # "/home/mmann1123/Dropbox/wb_malawi/test"  #   ##
+feature_vrt_output_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"
 
-partition = "defq"  # partition for slurm
-time_request = "02-12:35:00"  # time request for slurm DD-HH:MM:SS
+partition = "short"  # partition for slurm
+time_request = "00-23:55:00"  # time request for slurm DD-HH:MM:SS
 email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 
@@ -65,6 +65,8 @@ done
 
 # Get all VRT paths
 vrt_paths = glob(os.path.join(feature_vrt_output_directory, "*/*.vrt"))
+if not vrt_paths:
+    raise ValueError("No vrts found in the folder")
 print("vrt files found: ", vrt_paths)
 
 
