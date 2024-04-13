@@ -7,7 +7,7 @@ from functions import *
 ################################################
 # NEED TO EDIT THIS LINES
 # path to folder containing outputs from spfeas
-feature_vrt_output_directory = "/home/mmann1123/Dropbox/wb_malawi/test"  # "/mnt/bigdrive/Dropbox/wb_malawi/test"  ##r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"
+feature_vrt_output_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"  # "/home/mmann1123/Dropbox/wb_malawi/test"  # "/mnt/bigdrive/Dropbox/wb_malawi/test"  ##
 os.chdir(feature_vrt_output_directory)
 
 # bashscript output file name
