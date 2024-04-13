@@ -20,7 +20,7 @@ email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 ################ Don't edit below this line ################
 
-
+# check for errors in slurm partition and time request
 check_partition_time(partition, time_request)
 
 
@@ -48,7 +48,7 @@ os.makedirs(os.path.join(output_folder, "features"), exist_ok=True)
 batch_script_path = os.path.join(output_folder, "spfeas_batch_scripts")
 os.makedirs(batch_script_path, exist_ok=True)
 
-
+# write the batch script to run all the other batch scripts
 with open(f"{output_folder}/run_all_spfeas_batch_files.sh", "w") as f:
 
     f.write(
@@ -65,7 +65,7 @@ done
 """
     )
 
-
+# for each image write a batch script
 for image in images:
     for feature in [
         "fourier",
@@ -83,8 +83,8 @@ for image in images:
         # get file name without extension
         image_name = os.path.splitext(os.path.basename(image))[0]
 
+        # write the batch script
         with open(f"{batch_script_path}/{image_name}.sh", "w") as f:
-
             f.write(
                 f"""#!/bin/bash
 #SBATCH -p {partition}
