@@ -10,7 +10,7 @@ from functions import *  # import helper functions
 
 ############### EDIT THE FOLLOWING ################
 imagery_folder = (
-    "/mnt/bigdrive/Dropbox/wb_malawi/mosaic"  # "/CCAS/groups/engstromgrp/mike/mosaic"
+    "/CCAS/groups/engstromgrp/mike/mosaic"  # path to folder containing images
 )
 
 band_order = "bgrn"  # band order for spfeas
