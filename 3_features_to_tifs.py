@@ -1,5 +1,9 @@
-# %%
+# %% execute the following code to convert the VRT files to TIF files
+# author: Michael Mann GWU
+# from terminal:
+# python 3_features_to_tifs.py
 # Import modules
+
 import os
 from glob import glob
 from functions import *
@@ -14,16 +18,17 @@ os.chdir(feature_vrt_output_directory)
 bash_script_name = "vrt_to_tif.sh"
 
 ################################################
+# Don't touch below this line
 
 # create folder for feature tifs
 feature_tif_output_directory = os.path.join(
     os.path.dirname(feature_vrt_output_directory), "tifs"
 )
 
-
+# create bash script path
 path_to_bash_script = os.path.join(
     os.path.dirname(feature_vrt_output_directory), bash_script_name
-)  # "/mnt/bigdrive/Dropbox/wb_malawi/test"  ##r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"
+)
 # delete the file if it exists
 if os.path.exists(path_to_bash_script):
     os.remove(path_to_bash_script)
@@ -57,6 +62,7 @@ source activate Ryan_CondaEnvP3.6
 """
     )
 
+# for each vrt file get its scales and feature name, and region based on the vrt path
 for vrt in vrt_paths:
     # get all scales
     scales = get_scales(vrt)
@@ -91,13 +97,12 @@ for vrt in vrt_paths:
             band_count += 1
 
             # Create the relative path for the output tif that will be
-            # extracted from the VRT band-by-band *
             output_tif = os.path.join(
                 feature_tif_output_directory,
                 folder + "_SC" + scale + "_" + output + ".tif",
             )
 
-            # Open file and write the code *
+            # Open file and write the gdal command to extract the bands and write to tif
             with open(os.path.join(path_to_bash_script), "a+") as file:
                 file.write(
                     f'gdal_translate -b {band_count} -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" {vrt} {output_tif}\n\n'
