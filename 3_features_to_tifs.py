@@ -1,21 +1,23 @@
 # %% execute the following code to convert the VRT files to TIF files
+# it will create a series of bash scripts that will be executed in parallel
+# in a folder called batch_scripts_vrt_to_tif in the parent directory of the feature VRT files
 # author: Michael Mann GWU
 # from terminal:
 # python 3_features_to_tifs.py
 # Import modules
 
+# %%
 import os
 from glob import glob
 from functions import *
+from multiprocessing import Pool
 
 ################################################
 # NEED TO EDIT THIS LINES
 # path to folder containing outputs from spfeas
-feature_vrt_output_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"  # "/home/mmann1123/Dropbox/wb_malawi/test"  # "/mnt/bigdrive/Dropbox/wb_malawi/test"  ##
+feature_vrt_output_directory = "/mnt/bigdrive/Dropbox/wb_malawi/test"  # r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"  # "/home/mmann1123/Dropbox/wb_malawi/test"  #   ##
 os.chdir(feature_vrt_output_directory)
 
-# bashscript output file name
-bash_script_name = "vrt_to_tif.sh"
 
 ################################################
 # Don't touch below this line
@@ -24,46 +26,54 @@ bash_script_name = "vrt_to_tif.sh"
 feature_tif_output_directory = os.path.join(
     os.path.dirname(feature_vrt_output_directory), "tifs"
 )
-
-# create bash script path
-path_to_bash_script = os.path.join(
-    os.path.dirname(feature_vrt_output_directory), bash_script_name
+# create folder for batch scripts
+batch_script_path = os.path.join(
+    os.path.dirname(feature_vrt_output_directory), "batch_scripts_vrt_to_tif"
 )
-# delete the file if it exists
-if os.path.exists(path_to_bash_script):
-    os.remove(path_to_bash_script)
-print("Writing bash file to: ", path_to_bash_script)
+os.makedirs(batch_script_path, exist_ok=True)
+
+# write the batch script to run all the other batch scripts
+with open(
+    f"{os.path.dirname(feature_vrt_output_directory)}/run_all_vrt_to_tif_batch_files.sh",
+    "w",
+) as f:
+
+    f.write(
+        f"""#!/bin/bash
+
+# Set the folder containing the .sh files
+folder={batch_script_path}
+
+# Loop through each .sh file in the folder
+for file in "$folder"/*.sh; do
+    # Submit the .sh file to Slurm
+    sbatch "$file"
+done
+"""
+    )
+
+
+print(
+    f"""############# IMPORANT ################## 
+#############################################
+All batch scripts will be written to folder: {batch_script_path}
+
+Execute all batch scripts using:  {os.path.dirname(feature_vrt_output_directory)}/run_all_vrt_to_tif_batch_files.sh"
+#############################################
+#############################################
+
+    """
+)
 
 # Get all VRT paths
 vrt_paths = glob(os.path.join(feature_vrt_output_directory, "*/*.vrt"))
 print("vrt files found: ", vrt_paths)
 
-# Write SBATCH header
-with open(os.path.join(path_to_bash_script), "a+") as file:
-    file.write(
-        f"""#!/bin/bash
-#SBATCH -p defq
-#SBATCH -J spfeas_vrt_to_tif_run
-#SBATCH --export=NONE
-#SBATCH -t 5-00:00:00
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=mmann1123@gwu.edu
-#SBATCH -e vrt_to_tiff.err
-#SBATCH -o vrt_to_tiff.out 
-
-export PATH="/usr/bin:$PATH"
-source activate Ryan_CondaEnvP3.6
-               
-# This script takes the VRT files (the output of spfeas) and extracts the VRT
-# band-by-band, assigning each band according to its output name. The order of
-# outputs is determined from the spfeas package.
-
-               
-"""
-    )
 
 # for each vrt file get its scales and feature name, and region based on the vrt path
-for vrt in vrt_paths:
+
+
+def process_vrt(vrt):
     # get all scales
     scales = get_scales(vrt)
     # get feature name
@@ -79,6 +89,41 @@ for vrt in vrt_paths:
         " in folder: ",
         folder,
     )
+
+    # bashscript output file name
+    bash_script_name = f"{folder}_vrt_to_tif.sh"
+
+    # create bash script path
+    path_to_bash_script = os.path.join(batch_script_path, bash_script_name)
+
+    # delete the file if it exists
+    if os.path.exists(path_to_bash_script):
+        os.remove(path_to_bash_script)
+    print("Writing bash file to: ", path_to_bash_script)
+
+    # Write SBATCH header
+    with open(os.path.join(path_to_bash_script), "a+") as file:
+        file.write(
+            f"""#!/bin/bash
+#SBATCH -p tiny
+#SBATCH -J {folder}_vrt2tif
+#SBATCH --export=NONE
+#SBATCH -t 4:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=mmann1123@gwu.edu
+#SBATCH -e {folder}_vrt2tif.err
+#SBATCH -o {folder}_vrt2tif.out 
+
+export PATH="/usr/bin:$PATH"
+source activate Ryan_CondaEnvP3.6
+               
+# This script takes the VRT files (the output of spfeas) and extracts the VRT
+# band-by-band, assigning each band according to its output name. The order of
+# outputs is determined from the spfeas package.
+
+               
+"""
+        )
 
     band_count = 0
 
@@ -107,6 +152,11 @@ for vrt in vrt_paths:
                 file.write(
                     f'gdal_translate -b {band_count} -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" {vrt} {output_tif}\n\n'
                 )
+
+
+# Create a pool of workers
+with Pool() as p:
+    p.map(process_vrt, vrt_paths)
 
 
 # %%
