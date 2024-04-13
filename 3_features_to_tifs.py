@@ -14,13 +14,21 @@ from multiprocessing import Pool
 
 ################################################
 # NEED TO EDIT THIS LINES
-# path to folder containing outputs from spfeas
+# path to folder containing outputs from spfeas (e.g. folders ending in _mean _gabor etc),
+# should be  {imagery_folder}/features from 2_run_spfeas.py
+
 feature_vrt_output_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"  # "/mnt/bigdrive/Dropbox/wb_malawi/test"  #   # "/home/mmann1123/Dropbox/wb_malawi/test"  #   ##
-os.chdir(feature_vrt_output_directory)
+
+partition = "defq"  # partition for slurm
+time_request = "02-12:35:00"  # time request for slurm DD-HH:MM:SS
+email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 
-################################################
-# Don't touch below this line
+################ Don't edit below this line ################
+
+# check for errors in slurm partition and time request
+check_partition_time(partition, time_request)
+
 
 # create folder for feature tifs
 feature_tif_output_directory = os.path.join(
@@ -95,12 +103,12 @@ def process_vrt(vrt):
     with open(os.path.join(path_to_bash_script), "a+") as file:
         file.write(
             f"""#!/bin/bash
-#SBATCH -p tiny
+#SBATCH -p {partition}
 #SBATCH -J {folder}_vrt2tif
 #SBATCH --export=NONE
-#SBATCH -t 4:00:00
+#SBATCH -t {time_request}
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=mmann1123@gwu.edu
+#SBATCH --mail-user={email}
 #SBATCH -e {folder}_vrt2tif.err
 #SBATCH -o {folder}_vrt2tif.out 
 
