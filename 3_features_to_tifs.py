@@ -55,18 +55,6 @@ done
     )
 
 
-print(
-    f"""############# IMPORANT ################## 
-#############################################
-All batch scripts will be written to folder: {batch_script_path}
-
-Execute all batch scripts using:  {os.path.dirname(feature_vrt_output_directory)}/run_all_vrt_to_tif_batch_files.sh"
-#############################################
-#############################################
-
-    """
-)
-
 # Get all VRT paths
 vrt_paths = glob(os.path.join(feature_vrt_output_directory, "*/*.vrt"))
 print("vrt files found: ", vrt_paths)
@@ -161,5 +149,18 @@ with Pool() as p:
     p.map(process_vrt, vrt_paths)
 
 
+print(
+    f"""############# IMPORANT ################## 
+#############################################
+All batch scripts will be written to folder: {batch_script_path}
+
+Execute all batch scripts using:  {os.path.dirname(feature_vrt_output_directory)}/run_all_vrt_to_tif_batch_files.sh"
+
+All output tifs will be written to folder: {feature_tif_output_directory}
+#############################################
+#############################################
+
+    """
+)
 # %%
 # %%
