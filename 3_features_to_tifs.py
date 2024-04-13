@@ -164,7 +164,7 @@ print(
 #############################################
 All batch scripts will be written to folder: {batch_script_path}
 
-Execute all batch scripts using:  {os.path.dirname(feature_vrt_output_directory)}/run_all_vrt_to_tif_batch_files.sh"
+Execute all batch scripts using:  {os.path.dirname(feature_vrt_output_directory)}/run_all_vrt_to_tif_batch_files.sh
 
 All output tifs will be written to folder: {feature_tif_output_directory}
 #############################################
