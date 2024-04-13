@@ -26,6 +26,8 @@ os.chdir(feature_vrt_output_directory)
 feature_tif_output_directory = os.path.join(
     os.path.dirname(feature_vrt_output_directory), "tifs"
 )
+os.makedirs(feature_tif_output_directory, exist_ok=True)
+
 # create folder for batch scripts
 batch_script_path = os.path.join(
     os.path.dirname(feature_vrt_output_directory), "batch_scripts_vrt_to_tif"
