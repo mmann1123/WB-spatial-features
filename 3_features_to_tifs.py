@@ -15,7 +15,7 @@ from multiprocessing import Pool
 ################################################
 # NEED TO EDIT THIS LINES
 # path to folder containing outputs from spfeas
-feature_vrt_output_directory = "/mnt/bigdrive/Dropbox/wb_malawi/test"  # r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"  # "/home/mmann1123/Dropbox/wb_malawi/test"  #   ##
+feature_vrt_output_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"  # "/mnt/bigdrive/Dropbox/wb_malawi/test"  #   # "/home/mmann1123/Dropbox/wb_malawi/test"  #   ##
 os.chdir(feature_vrt_output_directory)
 
 
