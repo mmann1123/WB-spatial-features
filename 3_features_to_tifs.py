@@ -43,6 +43,13 @@ batch_script_path = os.path.join(
 )
 os.makedirs(batch_script_path, exist_ok=True)
 
+# create folder for slurm errors and outputs
+slurm_output_directory = os.path.join(
+    os.path.dirname(feature_vrt_output_directory), "slurm_outputs"
+)
+os.makedirs(slurm_output_directory, exist_ok=True)
+
+
 # write the batch script to run all the other batch scripts
 with open(
     f"{os.path.dirname(feature_vrt_output_directory)}/run_all_vrt_to_tif_batch_files.sh",
@@ -114,8 +121,8 @@ def process_vrt(vrt):
 #SBATCH -t {time_request}
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user={email}
-#SBATCH -e {folder}_vrt2tif.err
-#SBATCH -o {folder}_vrt2tif.out 
+#SBATCH -e {slurm_output_directory}/{folder}_vrt2tif.err
+#SBATCH -o {slurm_output_directory}/{folder}_vrt2tif.out 
 
 export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
 source activate Ryan_CondaEnvP2.7
@@ -170,6 +177,8 @@ All batch scripts will be written to folder: {batch_script_path}
 Execute all batch scripts using:  {os.path.dirname(feature_vrt_output_directory)}/run_all_vrt_to_tif_batch_files.sh
 
 All output tifs will be written to folder: {feature_tif_output_directory}
+
+Slurm outputs will be written to folder: {slurm_output_directory}
 #############################################
 #############################################
 
