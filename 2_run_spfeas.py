@@ -145,6 +145,6 @@ execute_script = input(
 
 # If the user answers 'yes', execute the bash script
 if execute_script.lower() == "yes":
-    subprocess.run(["bash", batch_script_path])
+    subprocess.run(["bash", f"{batch_script_path}/{image_name}.sh"])
 
 # %%
