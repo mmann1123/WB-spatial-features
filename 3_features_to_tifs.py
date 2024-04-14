@@ -45,6 +45,9 @@ os.makedirs(batch_script_path, exist_ok=True)
 
 
 # remove any existing batch scripts using pool map
+print("Removing existing batch scripts")
+
+
 def remove_file(file):
     os.remove(file)
 
