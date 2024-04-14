@@ -43,6 +43,16 @@ batch_script_path = os.path.join(
 )
 os.makedirs(batch_script_path, exist_ok=True)
 
+
+# remove any existing batch scripts using pool map
+def remove_file(file):
+    os.remove(file)
+
+
+with Pool() as p:
+    p.map(remove_file, glob(os.path.join(batch_script_path, "*.sh")))
+
+
 # create folder for slurm errors and outputs
 slurm_output_directory = os.path.join(
     os.path.dirname(feature_vrt_output_directory), "slurm_outputs"
