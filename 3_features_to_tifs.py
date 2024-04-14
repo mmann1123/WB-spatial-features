@@ -11,6 +11,7 @@ import os
 from glob import glob
 from functions import *
 from multiprocessing import Pool
+import subprocess
 
 ################################################
 # NEED TO EDIT THIS LINES
@@ -172,5 +173,16 @@ All output tifs will be written to folder: {feature_tif_output_directory}
 
     """
 )
+
+
+# Ask the user if they want to execute the bash script
+execute_script = input(
+    f"Execute all the batch scripts and convert spfeas vrts to tifs? (yes/no): "
+)
+
+
+# If the user answers 'yes', execute the bash script
+if execute_script.lower() == "yes":
+    subprocess.run(["bash", batch_script_path])
 # %%
 # %%

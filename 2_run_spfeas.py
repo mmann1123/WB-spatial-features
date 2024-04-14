@@ -7,6 +7,7 @@
 import os
 from glob import glob
 from functions import *  # import helper functions
+import subprocess
 
 ############### EDIT THE FOLLOWING ################
 imagery_folder = (
@@ -131,6 +132,15 @@ All output feature vrts and images will be writen to: {output_folder}/features
 
     """
 )
-print("All batch scripts written")
+
+# Ask the user if they want to execute the bash script
+execute_script = input(
+    f"Execute all the batch scripts and create all spfeas features? (yes/no): "
+)
+
+
+# If the user answers 'yes', execute the bash script
+if execute_script.lower() == "yes":
+    subprocess.run(["bash", batch_script_path])
 
 # %%
