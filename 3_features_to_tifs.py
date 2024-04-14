@@ -68,8 +68,10 @@ done
 vrt_paths = glob(os.path.join(feature_vrt_output_directory, "*/*.vrt"))
 if not vrt_paths:
     raise ValueError("No vrts found in the folder")
-print("vrt files found: ", vrt_paths)
-
+print(
+    "##################################\n Number of vrt files found: ", len(vrt_paths)
+)
+print("Examples: ", vrt_paths[:5])
 
 # for each vrt file get its scales and feature name, and region based on the vrt path
 

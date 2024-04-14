@@ -34,7 +34,11 @@ base_path = os.path.dirname(imagery_folder)
 
 # find all input images to process
 images = glob(f"{imagery_folder}/*.tif")
-print("processing images:", images)
+print("Number of images found:", len(images))
+if len(images) < 6:
+    print("Example", images[0])
+else:
+    print("Example", images[:5])
 
 if not images:
     raise ValueError("No images found in the folder")
