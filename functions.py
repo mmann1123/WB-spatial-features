@@ -3,6 +3,10 @@ import os
 from glob import glob
 
 
+def remove_file(file):
+    os.remove(file)
+
+
 def get_scales(vrt_path):
 
     matches = re.search(r"_SC(\d+(?:-\d+)*)_[^/]*TR", vrt_path)
