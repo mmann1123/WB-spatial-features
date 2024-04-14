@@ -12,6 +12,7 @@ from glob import glob
 from functions import *
 from multiprocessing import Pool
 import subprocess
+from tqdm import tqdm
 
 ################################################
 # NEED TO EDIT THIS LINES
@@ -48,13 +49,13 @@ os.makedirs(batch_script_path, exist_ok=True)
 print("Removing existing batch scripts")
 
 
-def remove_file(file):
-    os.remove(file)
-
+# Get list of files
+files = glob(os.path.join(batch_script_path, "*.sh"))
 
 with Pool() as p:
-    p.map(remove_file, glob(os.path.join(batch_script_path, "*.sh")))
-
+    # Use tqdm for progress bar
+    for _ in tqdm(p.imap_unordered(remove_file, files), total=len(files)):
+        pass
 
 # create folder for slurm errors and outputs
 slurm_output_directory = os.path.join(
@@ -122,7 +123,7 @@ def process_vrt(vrt):
     # delete the file if it exists
     if os.path.exists(path_to_bash_script):
         os.remove(path_to_bash_script)
-    print("Writing bash file to: ", path_to_bash_script)
+    # print("Writing bash file to: ", path_to_bash_script)
 
     # Write SBATCH header
     with open(os.path.join(path_to_bash_script), "a+") as file:
@@ -177,9 +178,10 @@ source activate Ryan_CondaEnvP2.7
                 )
 
 
-# Create a pool of workers
 with Pool() as p:
-    p.map(process_vrt, vrt_paths)
+    # Use tqdm for progress bar
+    for _ in tqdm(p.imap_unordered(process_vrt, vrt_paths), total=len(vrt_paths)):
+        pass
 
 
 print(
