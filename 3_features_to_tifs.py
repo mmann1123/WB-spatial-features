@@ -117,9 +117,9 @@ def process_vrt(vrt):
 #SBATCH -e {folder}_vrt2tif.err
 #SBATCH -o {folder}_vrt2tif.out 
 
-export PATH="/usr/bin:$PATH"
-source activate Ryan_CondaEnvP3.6
-               
+export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
+source activate Ryan_CondaEnvP2.7
+
 # This script takes the VRT files (the output of spfeas) and extracts the VRT
 # band-by-band, assigning each band according to its output name. The order of
 # outputs is determined from the spfeas package.
