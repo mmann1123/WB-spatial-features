@@ -24,6 +24,98 @@ f_south = open("./data/south_adm2.geojson")
 fc_south = create_ee_polygon_from_geojson(f_south)
 
 
+#  %% get time series bands of interest
+# SWITCHING TO SINGLE BAND TO DO INTERPOLATION
+# Red (Band 4): This band is sensitive to vegetation and can help differentiate between vegetated and non-vegetated areas within urban environments.
+# NIR (Near Infrared - Band 8): NIR is useful for distinguishing between different types of surfaces based on their reflectance properties. Urban areas typically have low NIR reflectance due to the presence of buildings and pavement.
+# SWIR (Shortwave Infrared - Bands 11 and 12): SWIR bands are sensitive to moisture content and surface roughness, which can help identify materials like concrete and asphalt commonly found in urban areas.
+# SWIR2 (Shortwave Infrared - Band 12): This band is particularly useful for mapping urban materials with low reflectance in the visible and NIR regions, such as asphalt and dark rooftops.
+
+# Set parameters
+bands = [
+    "B2",
+    "B3",
+    "B4",
+    "B8",
+    "B11",
+    "B12",
+]  # red and NIR already in other see 4_time_series_features.py
+
+# Cloud filter parameters
+CLOUD_FILTER = 75  # 75  Maximum image cloud cover percent allowed in image collection
+CLD_PRB_THRESH = 30  # 30 Cloud prob(%); values greater than are considered cloud
+NIR_DRK_THRESH = 0.2  #  0.2  Minimum NIR refl to be considered potential cloud shadow
+
+CLD_PRJ_DIST = 2  # 2 Maximum distance (km) to search for cloud shadows from cloud edges
+BUFFER = 40  # was 40-50 A buffer around the AOI to apply cloud mask
+folder = "malawi_imagery_new"
+SCALE = 10
+
+
+# %% QUARTERLY COMPOSITES
+for band in bands:
+    for site, name in zip([fc_north, fc_south], ["north", "south"]):
+        q_finished = []
+        for year in list(range(2020, 2025)):  # 2021-2023
+            for month in list(range(1, 13)):
+
+                dt = pendulum.datetime(year, month, 1)
+                # avoid repeating same quarter
+                yq = f"{year}_{dt.quarter}"
+                if yq in q_finished:
+                    # print('skipping')
+                    continue
+                else:
+                    # print(f"appending {year}_{dt.quarter}")
+                    q_finished.append(f"{year}_{dt.quarter}")
+
+                print(f"Year: {year} Quarter: {dt.quarter}")
+
+                # filter by date and cloud cover
+                collection = get_s2A_SR_sr_cld_collection(
+                    site,
+                    dt.first_of("quarter").strftime(r"%Y-%m-%d"),
+                    dt.last_of("quarter").strftime(r"%Y-%m-%d"),
+                    CLOUD_FILTER=CLOUD_FILTER,
+                )
+
+                # add cloud and shadow mask
+                s2_sr = (
+                    collection.map(
+                        lambda image: add_cld_shdw_mask(
+                            image,
+                            CLD_PRB_THRESH=CLD_PRB_THRESH,
+                            NIR_DRK_THRESH=NIR_DRK_THRESH,
+                            CLD_PRJ_DIST=CLD_PRJ_DIST,
+                            SCALE=SCALE,
+                            BUFFER=BUFFER,
+                        )
+                    )
+                    .map(apply_cld_shdw_mask)
+                    .select(bands)
+                    .median()
+                )
+
+                # Mask AOI  DONT MASK AOI FOR SPFEAS
+                # Create a mask from the AOI: 1 inside the geometry, 0 outside.
+                # aoi_mask = ee.Image.constant(1).clip(site.buffer(300)).mask()
+                # s2_sr = s2_sr.updateMask(aoi_mask)
+                s2_sr = s2_sr.select(band)
+                # Convert to float32
+                s2_sr = s2_sr.toFloat()
+
+                # # export clipped result in Tiff
+                img_name = f"{band}_S2_SR_{year}_Q{str(dt.quarter).zfill(2)}_{name}"
+                export_config = {
+                    "scale": SCALE,
+                    "maxPixels": 50000000000,
+                    "driveFolder": folder,
+                    "region": site,
+                }
+                task = ee.batch.Export.image(s2_sr, img_name, export_config)
+                task.start()
+
+
 # %%
 # Set parameters
 bands = ["B2", "B3", "B4", "B8"]
@@ -83,10 +175,10 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
                 .median()
             )
 
-            # Mask AOI
+            # DONT MASK AOI FOR SPFEAS
             # Create a mask from the AOI: 1 inside the geometry, 0 outside.
-            aoi_mask = ee.Image.constant(1).clip(site.buffer(300)).mask()
-            s2_sr = s2_sr.updateMask(aoi_mask)
+            # aoi_mask = ee.Image.constant(1).clip(site.buffer(300)).mask()
+            # s2_sr = s2_sr.updateMask(aoi_mask)
             s2_sr = s2_sr.select(bands)
             # Convert to float32
             s2_sr = s2_sr.toFloat()
@@ -103,148 +195,58 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
             task.start()
 
 
-#  %% get time series bands of interest
-# Red (Band 4): This band is sensitive to vegetation and can help differentiate between vegetated and non-vegetated areas within urban environments.
-# NIR (Near Infrared - Band 8): NIR is useful for distinguishing between different types of surfaces based on their reflectance properties. Urban areas typically have low NIR reflectance due to the presence of buildings and pavement.
-# SWIR (Shortwave Infrared - Bands 11 and 12): SWIR bands are sensitive to moisture content and surface roughness, which can help identify materials like concrete and asphalt commonly found in urban areas.
-# SWIR2 (Shortwave Infrared - Band 12): This band is particularly useful for mapping urban materials with low reflectance in the visible and NIR regions, such as asphalt and dark rooftops.
-
-# Set parameters
-bands = [
-    "B4",
-    "B8",
-    "B11",
-    "B12",
-]  # red and NIR already in other see 4_time_series_features.py
-
-# Cloud filter parameters
-CLOUD_FILTER = 75  # 75  Maximum image cloud cover percent allowed in image collection
-CLD_PRB_THRESH = 30  # 30 Cloud prob(%); values greater than are considered cloud
-NIR_DRK_THRESH = 0.2  #  0.2  Minimum NIR refl to be considered potential cloud shadow
-
-CLD_PRJ_DIST = 2  # 2 Maximum distance (km) to search for cloud shadows from cloud edges
-BUFFER = 40  # was 40-50 A buffer around the AOI to apply cloud mask
-folder = "malawi_imagery"
-SCALE = 10
-
-
 # %% ANNUAL COMPOSITES
-for band in bands:
-    for site, name in zip([fc_north, fc_south], ["north", "south"]):
-        for year in list(range(2019, 2024)):  # 2024
+# for band in bands:
+#     for site, name in zip([fc_north, fc_south], ["north", "south"]):
+#         for year in list(range(2019, 2024)):  # 2024
 
-            dt = pendulum.datetime(year, 1, 1)
+#             dt = pendulum.datetime(year, 1, 1)
 
-            print(f"Year: {year}")
+#             print(f"Year: {year}")
 
-            # filter by date and cloud cover
-            collection = get_s2A_SR_sr_cld_collection(
-                site,
-                dt.first_of("year").strftime(r"%Y-%m-%d"),
-                dt.last_of("year").strftime(r"%Y-%m-%d"),
-                CLOUD_FILTER=CLOUD_FILTER,
-            )
+#             # filter by date and cloud cover
+#             collection = get_s2A_SR_sr_cld_collection(
+#                 site,
+#                 dt.first_of("year").strftime(r"%Y-%m-%d"),
+#                 dt.last_of("year").strftime(r"%Y-%m-%d"),
+#                 CLOUD_FILTER=CLOUD_FILTER,
+#             )
 
-            # add cloud and shadow mask
-            s2_sr = (
-                collection.map(
-                    lambda image: add_cld_shdw_mask(
-                        image,
-                        CLD_PRB_THRESH=CLD_PRB_THRESH,
-                        NIR_DRK_THRESH=NIR_DRK_THRESH,
-                        CLD_PRJ_DIST=CLD_PRJ_DIST,
-                        SCALE=SCALE,
-                        BUFFER=BUFFER,
-                    )
-                )
-                .map(apply_cld_shdw_mask)
-                .select(bands)
-                .median()
-            )
+#             # add cloud and shadow mask
+#             s2_sr = (
+#                 collection.map(
+#                     lambda image: add_cld_shdw_mask(
+#                         image,
+#                         CLD_PRB_THRESH=CLD_PRB_THRESH,
+#                         NIR_DRK_THRESH=NIR_DRK_THRESH,
+#                         CLD_PRJ_DIST=CLD_PRJ_DIST,
+#                         SCALE=SCALE,
+#                         BUFFER=BUFFER,
+#                     )
+#                 )
+#                 .map(apply_cld_shdw_mask)
+#                 .select(bands)
+#                 .median()
+#             )
 
-            # Mask AOI
-            # Create a mask from the AOI: 1 inside the geometry, 0 outside.
-            aoi_mask = ee.Image.constant(1).clip(site.buffer(300)).mask()
-            s2_sr = s2_sr.updateMask(aoi_mask)
-            s2_sr = s2_sr.select(band)
-            # Convert to float32
-            s2_sr = s2_sr.toFloat()
+#             # Mask AOI
+#             # Create a mask from the AOI: 1 inside the geometry, 0 outside.
+#             aoi_mask = ee.Image.constant(1).clip(site.buffer(300)).mask()
+#             s2_sr = s2_sr.updateMask(aoi_mask)
+#             s2_sr = s2_sr.select(band)
+#             # Convert to float32
+#             s2_sr = s2_sr.toFloat()
 
-            # # export clipped result in Tiff
-            img_name = f"{band}_S2_SR_{year}_{name}"
-            export_config = {
-                "scale": SCALE,
-                "maxPixels": 50000000000,
-                "driveFolder": folder,
-                "region": site,
-            }
-            task = ee.batch.Export.image(s2_sr, img_name, export_config)
-            task.start()
-
-
-# %% QUARTERLY COMPOSITES
-for band in bands:
-    for site, name in zip([fc_north, fc_south], ["north", "south"]):
-        q_finished = []
-        for year in list(range(2021, 2024)):  # 2024
-            for month in list(range(1, 13)):
-
-                dt = pendulum.datetime(year, month, 1)
-                # avoid repeating same quarter
-                yq = f"{year}_{dt.quarter}"
-                if yq in q_finished:
-                    # print('skipping')
-                    continue
-                else:
-                    # print(f"appending {year}_{dt.quarter}")
-                    q_finished.append(f"{year}_{dt.quarter}")
-
-                print(f"Year: {year} Quarter: {dt.quarter}")
-
-                # filter by date and cloud cover
-                collection = get_s2A_SR_sr_cld_collection(
-                    site,
-                    dt.first_of("quarter").strftime(r"%Y-%m-%d"),
-                    dt.last_of("quarter").strftime(r"%Y-%m-%d"),
-                    CLOUD_FILTER=CLOUD_FILTER,
-                )
-
-                # add cloud and shadow mask
-                s2_sr = (
-                    collection.map(
-                        lambda image: add_cld_shdw_mask(
-                            image,
-                            CLD_PRB_THRESH=CLD_PRB_THRESH,
-                            NIR_DRK_THRESH=NIR_DRK_THRESH,
-                            CLD_PRJ_DIST=CLD_PRJ_DIST,
-                            SCALE=SCALE,
-                            BUFFER=BUFFER,
-                        )
-                    )
-                    .map(apply_cld_shdw_mask)
-                    .select(bands)
-                    .median()
-                )
-
-                # Mask AOI
-                # Create a mask from the AOI: 1 inside the geometry, 0 outside.
-                aoi_mask = ee.Image.constant(1).clip(site.buffer(300)).mask()
-                s2_sr = s2_sr.updateMask(aoi_mask)
-                s2_sr = s2_sr.select(band)
-                # Convert to float32
-                s2_sr = s2_sr.toFloat()
-
-                # # export clipped result in Tiff
-                img_name = f"{band}_S2_SR_{year}_Q{str(dt.quarter).zfill(2)}_{name}"
-                export_config = {
-                    "scale": SCALE,
-                    "maxPixels": 50000000000,
-                    "driveFolder": folder,
-                    "region": site,
-                }
-                task = ee.batch.Export.image(s2_sr, img_name, export_config)
-                task.start()
-
+#             # # export clipped result in Tiff
+#             img_name = f"{band}_S2_SR_{year}_{name}"
+#             export_config = {
+#                 "scale": SCALE,
+#                 "maxPixels": 50000000000,
+#                 "driveFolder": folder,
+#                 "region": site,
+#             }
+#             task = ee.batch.Export.image(s2_sr, img_name, export_config)
+#             task.start()
 
 # %% Visualize
 
