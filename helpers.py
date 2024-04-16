@@ -17,33 +17,33 @@ import ee
 import json
 
 
-def mask_water(image):
-    """Mask water using MNDWI index. MNDWI = (Green - SWIR) / (Green + SWIR)
-    Args:
-        image: ee.Image
-    Returns:
-        image: ee.Image
-    """
+# def mask_water(image):
+#     """Mask water using MNDWI index. MNDWI = (Green - SWIR) / (Green + SWIR)
+#     Args:
+#         image: ee.Image
+#     Returns:
+#         image: ee.Image
+#     """
 
-    ndwi = image.normalizedDifference(["B3", "B11"])
-    # Create a water mask (1 for water, 0 for non-water)
-    water_mask = ndwi.gt(0)
+#     ndwi = image.normalizedDifference(["B3", "B11"])
+#     # Create a water mask (1 for water, 0 for non-water)
+#     water_mask = ndwi.gt(0)
 
-    return image.updateMask(water_mask.Not())
+#     return image.updateMask(water_mask.Not())
 
 
-def mask_water_from_SCL(image):
-    """Scene Classification Layer (SCL)  In the Scene Classification Layer, water bodies are typically classified under the class value of "6". This classification allows users to identify water pixels within the imagery. The SCL provides a convenient way to mask out water bodies when analyzing Sentinel-2 imagery for applications that require distinguishing between water and non-water pixels.
+# def mask_water_from_SCL(image):
+#     """Scene Classification Layer (SCL)  In the Scene Classification Layer, water bodies are typically classified under the class value of "6". This classification allows users to identify water pixels within the imagery. The SCL provides a convenient way to mask out water bodies when analyzing Sentinel-2 imagery for applications that require distinguishing between water and non-water pixels.
 
-    Args:
-        image: ee.Image
-    Returns:
-        image: ee.Image
-    """
-    # Create a water mask (1 for water, 0 for non-water)
-    not_water = image.select("SCL").neq(6)
+#     Args:
+#         image: ee.Image
+#     Returns:
+#         image: ee.Image
+#     """
+#     # Create a water mask (1 for water, 0 for non-water)
+#     not_water = image.select("SCL").neq(6)
 
-    return image.updateMask(not_water.Not())
+#     return image.updateMask(not_water.Not())
 
 
 def add_cloud_bands(img, CLD_PRB_THRESH):
