@@ -23,7 +23,8 @@ south_tiles = sorted(glob("./tiles/*S2_SR_*_south*.tif"))
 south_tiles
 
 # Get unique grid codes
-pattern = r"(?<=-)\d+-\d+(?=\.tif)"
+# pattern = r"(?<=-)\d+-\d+(?=\.tif)"
+pattern = r"((north|south)-\d+-\d+)(?=\.tif)"
 unique_grids = list(
     set(
         [
