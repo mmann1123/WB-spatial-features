@@ -115,7 +115,11 @@ for band in bands:
                 task = ee.batch.Export.image(s2_sr, img_name, export_config)
                 task.start()
 
-
+# %% sync using rclone to local once all gee tasks are complete -
+# from terminal run
+# rclone sync mygdrive:/malawi_imagery_new /home/mmann1123/Downloads/malawi_imagery_new
+# if not working run:
+# rclone config and edit mygdrive remote to reestablish connection
 # %%
 # Set parameters
 bands = ["B2", "B3", "B4", "B8"]
