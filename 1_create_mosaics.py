@@ -87,7 +87,7 @@ for band_name in bands:
     f_list = sorted(glob(file_glob))
     print(f_list)
 
-    for grid in unique_grids[0:1]:
+    for grid in unique_grids:
         print("working on grid", grid)
         a_grid = sorted([f for f in f_list if grid in f])
         print("files:", a_grid)
@@ -122,9 +122,17 @@ from numpy import int16
 
 os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated")
 os.makedirs("../interpolated_monthly", exist_ok=True)
+bands = [
+    "B2",
+    "B3",
+    "B4",
+    "B8",
+    "B11",
+    "B12",
+]
 
 for band_name in bands:
-    file_glob = f"{band_name}_S2_SR_linear_interp*.tif"
+    file_glob = f"{band_name}_S2_SR_linear_interp_{interp_type}*.tif"
 
     f_list = sorted(glob(file_glob))
     print(f_list)
@@ -143,6 +151,7 @@ for band_name in bands:
             )
         )
     )
+    print("unique_grids:", unique_grids)
     times = unique_quarters
 
     for stack, grid in zip(f_list, unique_grids):
@@ -155,7 +164,7 @@ for band_name in bands:
                     src[i],
                     compress="LZW",
                     filename=f"../interpolated_monthly/{band_name}_S2_SR_{times[i]}-{grid}.tif",
-                    num_workers=10,
+                    num_workers=15,
                 )
 
 # %% mosaic souther tiles
