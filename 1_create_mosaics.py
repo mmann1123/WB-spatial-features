@@ -114,6 +114,8 @@ for band_name in bands:
 
 ######################################
 # %% convert multiband images to single band
+# NEED TO RERUN FOR B11 AND B12
+
 from glob import glob
 import os
 import re
@@ -123,10 +125,10 @@ from numpy import int16
 os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated")
 os.makedirs("../interpolated_monthly", exist_ok=True)
 bands = [
-    "B2",
-    "B3",
-    "B4",
-    "B8",
+    # "B2",
+    # "B3",
+    # "B4",
+    # "B8",
     "B11",
     "B12",
 ]
@@ -167,32 +169,42 @@ for band_name in bands:
                     num_workers=15,
                 )
 
-# %% mosaic souther tiles
+
+# %% mosaic bgrn and southern tiles
+
 import geowombat as gw
 from glob import glob
 import os
 import re
 
+os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated_monthly")
+os.makedirs("../mosaic", exist_ok=True)
+bands = [
+    "B2",
+    "B3",
+    "B4",
+    "B8",
+    "B11",
+    "B12",
+]
 
-os.chdir("/mnt/bigdrive/Dropbox/wb_malawi")
-os.makedirs("mosaic", exist_ok=True)
-
-
-south_tiles = sorted(glob("./tiles/S2_SR_*_south*.tif"))
-south_tiles
+images = sorted(glob("*.tif"))
+images
 
 # Get unique grid codes
-pattern = r"(?<=-)\d+-\d+(?=\.tif)"
-unique_grids = list(
-    set(
-        [
-            re.search(pattern, file_path).group()
-            for file_path in south_tiles
-            if re.search(pattern, file_path)
-        ]
-    )
-)
-unique_grids
+# pattern = r"(?<=-)\d+-\d+(?=\.tif)" #gets just southern codes
+# pattern = r"linear_*_(.+?)\.tif"
+
+# unique_grids = list(
+#     set(
+#         [
+#             re.search(pattern, file_path).group()
+#             for file_path in images
+#             if re.search(pattern, file_path)
+#         ]
+#     )
+# )
+# unique_grids
 
 # get unique year and quarter
 pattern = r"\d{4}_Q\d{2}"
@@ -201,7 +213,7 @@ unique_quarters = sorted(
         set(
             [
                 re.search(pattern, file_path).group()
-                for file_path in south_tiles
+                for file_path in images
                 if re.search(pattern, file_path)
             ]
         )
@@ -215,24 +227,54 @@ from rasterio.coords import BoundingBox
 
 missing_data = nan
 
-bounds = BoundingBox(*gpd.read_file("./boundaries/south_adm2.geojson").total_bounds)
+# bounds = BoundingBox(*gpd.read_file("../../boundaries/south_adm2.geojson").total_bounds)
 
 # Print the unique codes
 for quarter in unique_quarters:
     print("working on grid", quarter)
+    # subset a quarter
+    a_quarter = sorted([f for f in images if quarter in f])
 
-    a_quarter = sorted([f for f in south_tiles if quarter in f])
-    print("files:", a_quarter)
-    with gw.config.update(ref_bounds=bounds):
-        with gw.open(a_quarter, mosaic=True, overlap="max") as src:
+    for zone in ["south", "north"]:
+        a_zone = sorted([f for f in a_quarter if zone in f])
+        # Define the bands in the desired order
+        band_order = ["B2", "B3", "B4", "B8"]
 
-            gw.save(
-                src,
-                filename=f"./mosaic/S2_SR_{quarter}_south.tif",
-                nodata=nan,
-                overwrite=True,
-                num_workers=12,
-                compress="lzw",
-            )
+        # Filter and sort the list
+        bgrn = sorted(
+            (f for f in a_zone if any(f.startswith(b) for b in band_order)),
+            key=lambda x: band_order.index(re.match(r"B\d+", x).group(0)),
+        )
+        print("files:", bgrn)
+
+        if zone == "north":
+            with gw.open(bgrn, stack_dim="band") as src:
+                gw.save(
+                    src,
+                    filename=f"../mosaic/S2_SR_{quarter}_north.tif",
+                    nodata=nan,
+                    overwrite=True,
+                    num_workers=12,
+                    compress="lzw",
+                )
+        if zone == "south":
+            # Splitting the list into two halves with alternating entries
+            part1 = bgrn[0::2]
+            part2 = bgrn[1::2]
+
+            # with gw.config.update(ref_bounds=bounds):
+            with gw.open(part1, stack_dim="band") as src1:
+                with gw.open(part2, stack_dim="band") as src2:
+
+                    with gw.open([src1, src2], mosaic=True, overlap="max") as out:
+
+                        gw.save(
+                            out,
+                            filename=f"/./mosaic/S2_SR_{quarter}_south.tif",
+                            nodata=nan,
+                            overwrite=True,
+                            num_workers=12,
+                            compress="lzw",
+                        )
 
 # %%
