@@ -14,14 +14,37 @@ from helpers import *
 # ee.Authenticate()
 ee.Initialize()
 # import geetools
+import geopandas as gpd
+from shapely.geometry import Polygon
 
 
+# split fc_south into 2 tiles
+south = gpd.read_file("./data/south_adm2.geojson")
+minx, miny, maxx, maxy = south.total_bounds
+y_range = south.bounds.maxy.max() - south.bounds.miny.min()
+y_mid = south.bounds.miny.min() + y_range / 2
+bbox = Polygon([(minx, y_mid), (maxx, y_mid), (maxx, maxy), (minx, maxy)])
+south_part1 = gpd.GeoDataFrame(geometry=[bbox], crs="EPSG:4326")
+south_part1.to_file("./data/south_adm2_part1.geojson")
+south_part1.explore()
+bbox = Polygon([(minx, miny), (maxx, miny), (maxx, y_mid), (minx, y_mid)])
+south_part2 = gpd.GeoDataFrame(geometry=[bbox], crs="EPSG:4326")
+south_part2.to_file("./data/south_adm2_part2.geojson")
+south_part2.explore()
+
+# %%
 # Create and return the Earth Engine Polygon Geometry
 f_north = open("./data/north_adm2.geojson")
 fc_north = create_ee_polygon_from_geojson(f_north)
 
 f_south = open("./data/south_adm2.geojson")
 fc_south = create_ee_polygon_from_geojson(f_south)
+
+# break fc_south into 2 tiles
+f_south1 = open("./data/south_adm2_part1.geojson")
+f_south1 = create_ee_polygon_from_geojson(f_south1)
+f_south2 = open("./data/south_adm2_part2.geojson")
+f_south2 = create_ee_polygon_from_geojson(f_south2)
 
 
 #  %% get time series bands of interest
@@ -48,13 +71,15 @@ NIR_DRK_THRESH = 0.2  #  0.2  Minimum NIR refl to be considered potential cloud 
 
 CLD_PRJ_DIST = 2  # 2 Maximum distance (km) to search for cloud shadows from cloud edges
 BUFFER = 40  # was 40-50 A buffer around the AOI to apply cloud mask
-folder = "malawi_imagery_new"
+folder = "malawi_imagery_new_split"
 SCALE = 10
 
 
 # %% QUARTERLY COMPOSITES
 for band in bands:
-    for site, name in zip([fc_north, fc_south], ["north", "south"]):
+    for site, name in zip(
+        [f_south1, f_south2, fc_north], ["south1", "south2", "north"]
+    ):
         q_finished = []
         for year in list(range(2020, 2025)):  # 2021-2023
             for month in list(range(1, 13)):
@@ -92,6 +117,7 @@ for band in bands:
                         )
                     )
                     .map(apply_cld_shdw_mask)
+                    .map(convert_to_float)
                     .select(bands)
                     .median()
                 )
@@ -101,14 +127,12 @@ for band in bands:
                 # aoi_mask = ee.Image.constant(1).clip(site.buffer(300)).mask()
                 # s2_sr = s2_sr.updateMask(aoi_mask)
                 s2_sr = s2_sr.select(band)
-                # Convert to float32
-                s2_sr = s2_sr.toFloat()
 
                 # # export clipped result in Tiff
                 img_name = f"{band}_S2_SR_{year}_Q{str(dt.quarter).zfill(2)}_{name}"
                 export_config = {
                     "scale": SCALE,
-                    "maxPixels": 50000000000,
+                    "maxPixels": 500000000000,
                     "driveFolder": folder,
                     "region": site,
                 }
