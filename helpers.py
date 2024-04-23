@@ -46,6 +46,16 @@ import json
 #     return image.updateMask(not_water.Not())
 
 
+def convert_to_float(image):
+    """Convert all bands to float.
+    Args:
+        image: ee.Image
+    Returns:
+        image: ee.Image
+    """
+    return image.toFloat()
+
+
 def add_cloud_bands(img, CLD_PRB_THRESH):
     """Add cloud probability and cloud mask bands to image.
     Args:
