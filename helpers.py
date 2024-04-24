@@ -1,4 +1,11 @@
-import ee
+try:
+    import ee
+except ImportError:
+    print(
+        "earthengine-api is not installed. Please install it to use the GEE functions."
+    )
+    ee = None
+
 
 # CLOUD_FILTER = 30 set by user
 # CLD_PRB_THRESH = 80
@@ -15,7 +22,10 @@ import ee
 # BUFFER = 100
 
 import json
-
+from geowombat.backends.rasterio_ import get_file_bounds
+from shapely.geometry import Polygon
+import geopandas as gpd
+from math import ceil
 
 # def mask_water(image):
 #     """Mask water using MNDWI index. MNDWI = (Green - SWIR) / (Green + SWIR)
@@ -44,6 +54,84 @@ import json
 #     not_water = image.select("SCL").neq(6)
 
 #     return image.updateMask(not_water.Not())
+
+
+def bounds_tiler(image_list, max_area=2.5e10):
+    """Breaks the image into smaller blocks if the area is too large
+    geowobat has trouble with large image blocks
+
+    Args:
+        image_list (list): list of images
+        max_area (float): maximum area in meters for a block
+
+    Returns:
+        list: list of bounds
+
+    Example:
+
+    bounds_list = bounds_tiler([images, images, images])
+            for bounds in bounds_list:
+
+                with gw.config.update(bigtiff="YES", ref_bounds=bounds):
+                    with gw.open(bgrn, stack_dim="band") as src:
+                        src.gw.save(
+                            filename=f"../stacks/S2_SR_{quarter}_{grid}_{round(bounds[1],2)},{round(bounds[3],2)}",
+                            nodata=nan,
+                            overwrite=True,
+                            num_workers=12,
+                            compress="lzw",
+                        )
+
+    """
+    bounds = get_file_bounds(
+        image_list,
+        return_bounds=True,
+    )
+    # convert bounds to meters in global equal area projection
+    minx, miny, maxx, maxy = bounds
+    bounds_gdf = gpd.GeoDataFrame(
+        geometry=[Polygon([(minx, miny), (minx, maxy), (maxx, maxy), (maxx, miny)])],
+        crs="EPSG:4326",
+    )
+    area = bounds_gdf.to_crs("EPSG:6933").area.values
+    # if small return one block
+    if area < max_area:
+        return [bounds]
+    elif area > max_area:
+        print("Large block found, breaking into 2.5e10m^2 blocks")
+        num_blocks = int(area / max_area) + 1
+        print("num_blocks:", num_blocks)
+
+        # get the bounds of the block
+        y_step = (maxy - miny) / num_blocks
+        blocks = [
+            [minx, miny + i * y_step, maxx, miny + (i + 1) * y_step]
+            for i in range(num_blocks)
+        ]
+        return blocks
+
+
+def list_files_pattern(images, pattern):
+    """List files that match a pattern
+    Args:
+        images: list of image paths
+        pattern: regex pattern
+    Returns:
+        list: list of files that match the pattern
+    """
+    import re
+
+    return sorted(
+        list(
+            set(
+                [
+                    re.search(pattern, file_path).group()
+                    for file_path in images
+                    if re.search(pattern, file_path)
+                ]
+            )
+        )
+    )
 
 
 def convert_to_float(image):
