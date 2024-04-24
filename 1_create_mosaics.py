@@ -113,82 +113,16 @@ for band_name in bands:
                     kwargs={"BIGTIFF": "YES"},
                 )
 
-######################################
-# %% convert multiband images to single band
-# NEED TO RERUN FOR B11 AND B12
-
-from glob import glob
-import os
-import re
+# %% attempt bgrn mosaic from interpolated stacks
 import geowombat as gw
-from numpy import int16
+import os
+import xarray as xr
+from helpers import bounds_tiler, list_files_pattern
+from numpy import nan
+from glob import glob
+import re
 
 os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated")
-os.makedirs("../interpolated_monthly", exist_ok=True)
-bands = [
-    "B2",
-    "B3",
-    "B4",
-    "B8",
-    "B11",
-    "B12",
-]
-interp_type = "linear"
-
-for band_name in bands:
-    file_glob = f"{band_name}_S2_SR_linear_interp_{interp_type}*.tif"
-
-    f_list = sorted(glob(file_glob))
-    print(f_list)
-
-    # Get unique grid codes
-    pattern = r"interp_*_(.+?)\.tif"
-
-    unique_grids = sorted(
-        list(
-            set(
-                [
-                    re.search(pattern, file_path).group(1)
-                    for file_path in f_list
-                    if re.search(pattern, file_path)
-                ]
-            )
-        )
-    )
-    print("unique_grids:", unique_grids)
-    times = unique_quarters
-
-    for stack, grid in zip(f_list, unique_grids):
-        print(f"images: {stack}, grid: {grid} - check for consistency")
-        with gw.config.update(bigtiff="YES"):
-            with gw.open(stack) as src:
-                for i in range(len(src)):
-                    print(f"working on {times[i]}")
-                    # display(src[i])
-                    src = src.fillna(src.mean())
-                    gw.save(
-                        src[i],
-                        compress="LZW",
-                        filename=f"../interpolated_monthly/{band_name}_S2_SR_{times[i]}-{grid}.tif",
-                        num_workers=15,
-                        overwrite=True,
-                    )
-
-
-# %% mosaic bgrn and southern tiles
-
-import geowombat as gw
-from glob import glob
-import os
-import re
-from numpy import nan
-import os
-from numpy import nan
-from helpers import bounds_tiler, list_files_pattern
-
-os.environ["GDAL_CACHEMAX"] = "6144"  # Set 512 MB for GDAL cache
-
-os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated_monthly")
 os.makedirs("../stacks", exist_ok=True)
 
 
@@ -204,97 +138,191 @@ unique_grids
 
 # get unique year and quarter
 pattern = r"\d{4}_Q\d{2}"
-unique_quarters = list_files_pattern(images, pattern)
+unique_quarters = list_files_pattern(glob("../B2/B2*.tif"), pattern)
 unique_quarters
 
-missing_data = nan
+# Define the bands in the desired order
+band_order = ["B2", "B3", "B4", "B8"]
 
 
-# Print the unique codes
-for quarter in unique_quarters[0:1]:
-    print("working on grid", quarter)
-    # subset a quarter
-    a_quarter = sorted([f for f in images if quarter in f])
+# for grid in unique_grids:
+for grid in unique_grids[::-1]:
+    # isolate the grid
+    a_grid = sorted([f for f in images if grid in f])
+    # Filter and sort the list
+    bgrn = sorted(
+        (f for f in a_grid if any(f.startswith(b) for b in band_order)),
+        key=lambda x: band_order.index(re.match(r"B\d+", x).group(0)),
+    )
+    # get list of smaller bounds if needed
+    bounds_list = bounds_tiler(bgrn, max_area=4e10)
+    print(f"Breaking into {len(bounds_list)} bounds boxes:")
 
-    for grid in unique_grids[1:2]:
-        a_zone = sorted([f for f in a_quarter if grid in f])
-        # Define the bands in the desired order
-        band_order = ["B2", "B3", "B4", "B8"]
-
-        # Filter and sort the list
-        bgrn = sorted(
-            (f for f in a_zone if any(f.startswith(b) for b in band_order)),
-            key=lambda x: band_order.index(re.match(r"B\d+", x).group(0)),
-        )
-
-        bounds_list = bounds_tiler(bgrn, max_area=2.5e10)
+    for quarter in unique_quarters:
         for bounds in bounds_list:
-            print("files:", bgrn)
             with gw.config.update(bigtiff="YES", ref_bounds=bounds):
-                with gw.open(bgrn, stack_dim="band") as src:
-                    src = src.astype("float32")
-                    display(src)
-                    # src = src.fillna(0.5)
 
-                    src.gw.save(
-                        filename=f"../stacks/S2_SR_{quarter}_{grid.split('.tif')[0]}_{round(bounds[1],2)}_{round(bounds[3],2)}.tif",
-                        nodata=nan,
-                        overwrite=True,
-                        num_workers=12,
-                        compress="lzw",
-                    )
-# %% attempt bgrn mosaic from interpolated stacks
-import geowombat as gw
-import os
-import xarray as xr
-from helpers import bounds_tiler
-from numpy import nan
+                # open each band seperately and interate over quarters
+                with gw.open(bgrn[0], band_names=unique_quarters) as B2:
+                    with gw.open(bgrn[1], band_names=unique_quarters) as B3:
+                        with gw.open(bgrn[2], band_names=unique_quarters) as B4:
+                            with gw.open(bgrn[3], band_names=unique_quarters) as B8:
+                                # stack the bands
+                                bands = [
+                                    B2.sel(band=quarter),
+                                    B3.sel(band=quarter),
+                                    B4.sel(band=quarter),
+                                    B8.sel(band=quarter),
+                                ]
+                                out = xr.concat(bands, dim="band")
+                                out.attrs = B2.attrs
 
-os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated")
-from geowombat.backends.rasterio_ import get_file_bounds
+                                print("files:", bgrn)
+                                out = out.astype("float32")
+                                display(out)
+                                # src = src.fillna(0.5)
+                                if len(bounds_list) > 1:
+                                    north_south = "south"
+                                else:
+                                    north_south = "north"
+                                out.gw.save(
+                                    filename=f"../mosaic/S2_SR_{quarter}_{north_south}_zone_{str(abs(round(bounds[1],2))).replace('.','-')}_{str(abs(round(bounds[3],2))).replace('.','-')}.tif",
+                                    nodata=nan,
+                                    overwrite=True,
+                                    num_workers=19,
+                                    compress="lzw",
+                                )
 
-bgrn = [
-    "B2_S2_SR_linear_interp_linear_south-0000000000-0000000000.tif",
-    "B3_S2_SR_linear_interp_linear_south-0000000000-0000000000.tif",
-    "B4_S2_SR_linear_interp_linear_south-0000000000-0000000000.tif",
-    "B8_S2_SR_linear_interp_linear_south-0000000000-0000000000.tif",
-]
+# ######################################
+# %% convert multiband images to single band
+# # NEED TO RERUN FOR B11 AND B12
 
-with gw.open(bgrn[0]) as B2:
-    with gw.open(bgrn[1]) as B3:
-        with gw.open(bgrn[2]) as B4:
-            with gw.open(bgrn[3]) as B8:
-                # concatenate the bands
-                bands = [B2.sel(band=1), B3.sel(band=1), B4.sel(band=1), B8.sel(band=1)]
-                out = xr.concat(bands, dim="band")
-                out.attrs = B2.attrs
-                with gw.config.update(bigtiff="YES", ref_bounds=[bgrn[2]]):
-                    out = out.chunk({"band": -1, "y": 2048, "x": 2048})
-                    display(out)
+# from glob import glob
+# import os
+# import re
+# import geowombat as gw
+# from numpy import int16
 
-                    out.gw.to_raster(
-                        filename=f"test.tif",
-                        nodata=nan,
-                        overwrite=True,
-                        num_workers=20,
-                        compress="lzw",
-                    )
-                # bounds_list = bounds_tiler(bgrn, max_area=2.5e10)
-                # for bounds in bounds_list:
-                #     print("files:", bgrn)
-                #     with gw.config.update(bigtiff="YES", ref_bounds=bounds):
-                #         with gw.open(bgrn, stack_dim="band") as src:
-                #             src = src.astype("float32")
-                #             display(src)
-                #             # src = src.fillna(0.5)
+# os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated")
+# os.makedirs("../interpolated_monthly", exist_ok=True)
+# bands = [
+#     "B2",
+#     "B3",
+#     "B4",
+#     "B8",
+#     "B11",
+#     "B12",
+# ]
+# interp_type = "linear"
 
-                #             src.gw.save(
-                #                 filename=f"../stacks/test_{round(bounds[1],2)}_{round(bounds[3],2)}.tif",
-                #                 nodata=nan,
-                #                 overwrite=True,
-                #                 num_workers=12,
-                #                 compress="lzw",
-                #             )
+# for band_name in bands:
+#     file_glob = f"{band_name}_S2_SR_linear_interp_{interp_type}*.tif"
+
+#     f_list = sorted(glob(file_glob))
+#     print(f_list)
+
+#     # Get unique grid codes
+#     pattern = r"interp_*_(.+?)\.tif"
+
+#     unique_grids = sorted(
+#         list(
+#             set(
+#                 [
+#                     re.search(pattern, file_path).group(1)
+#                     for file_path in f_list
+#                     if re.search(pattern, file_path)
+#                 ]
+#             )
+#         )
+#     )
+#     print("unique_grids:", unique_grids)
+#     times = unique_quarters
+
+#     for stack, grid in zip(f_list, unique_grids):
+#         print(f"images: {stack}, grid: {grid} - check for consistency")
+#         with gw.config.update(bigtiff="YES"):
+#             with gw.open(stack) as src:
+#                 for i in range(len(src)):
+#                     print(f"working on {times[i]}")
+#                     # display(src[i])
+#                     src = src.fillna(src.mean())
+#                     gw.save(
+#                         src[i],
+#                         compress="LZW",
+#                         filename=f"../interpolated_monthly/{band_name}_S2_SR_{times[i]}-{grid}.tif",
+#                         num_workers=15,
+#                         overwrite=True,
+#                     )
+
+
+# # %% mosaic bgrn and southern tiles
+
+# import geowombat as gw
+# from glob import glob
+# import os
+# import re
+# from numpy import nan
+# import os
+# from numpy import nan
+# from helpers import bounds_tiler, list_files_pattern
+
+# os.environ["GDAL_CACHEMAX"] = "6144"  # Set 512 MB for GDAL cache
+
+# os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated_monthly")
+# os.makedirs("../stacks", exist_ok=True)
+
+
+# images = sorted(glob("*.tif"))
+# images
+
+# # Get unique grid codes
+# # pattern = r"(?<=-)\d+-\d+(?=\.tif)" #gets just southern codes
+# pattern = r"linear_*_(.+?)\.tif"
+
+# unique_grids = list_files_pattern(images, pattern)
+# unique_grids
+
+# # get unique year and quarter
+# pattern = r"\d{4}_Q\d{2}"
+# unique_quarters = list_files_pattern(images, pattern)
+# unique_quarters
+
+# missing_data = nan
+
+
+# # Print the unique codes
+# for quarter in unique_quarters[0:1]:
+#     print("working on grid", quarter)
+#     # subset a quarter
+#     a_quarter = sorted([f for f in images if quarter in f])
+
+#     for grid in unique_grids[1:2]:
+#         a_zone = sorted([f for f in a_quarter if grid in f])
+#         # Define the bands in the desired order
+#         band_order = ["B2", "B3", "B4", "B8"]
+
+#         # Filter and sort the list
+#         bgrn = sorted(
+#             (f for f in a_zone if any(f.startswith(b) for b in band_order)),
+#             key=lambda x: band_order.index(re.match(r"B\d+", x).group(0)),
+#         )
+
+#         bounds_list = bounds_tiler(bgrn, max_area=2.5e10)
+#         for bounds in bounds_list:
+#             print("files:", bgrn)
+#             with gw.config.update(bigtiff="YES", ref_bounds=bounds):
+#                 with gw.open(bgrn, stack_dim="band") as src:
+#                     src = src.astype("float32")
+#                     display(src)
+#                     # src = src.fillna(0.5)
+
+#                     src.gw.save(
+#                         filename=f"../stacks/S2_SR_{quarter}_{grid.split('.tif')[0]}_{round(bounds[1],2)}_{round(bounds[3],2)}.tif",
+#                         nodata=nan,
+#                         overwrite=True,
+#                         num_workers=12,
+#                         compress="lzw",
+#                     )
 
 # %% mosaic bgrn and southern tiles
 
