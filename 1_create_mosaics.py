@@ -148,7 +148,7 @@ unique_quarters = list_files_pattern(glob("../B2/B2*.tif"), pattern)
 unique_quarters
 
 # remove years 2020 and 2024 from unique_quarters (only used for interpolation)
-unique_quarters = [q for q in unique_quarters if "2020" not in q and "2024" not in q]
+# unique_quarters = [q for q in unique_quarters if "2020" not in q and "2024" not in q]
 
 # Define the bands in the desired order
 band_order = ["B2", "B3", "B4", "B8"]
@@ -182,14 +182,14 @@ for grid in unique_grids[1:2]:
                 # open each band seperately and interate over quarters
                 with gw.open(bgrn[0], band_names=unique_quarters) as B2:
                     B2 = B2.fillna(
-                        B2.mean()
+                        B2.mean(skipna=True)
                     )  # fill missing values that remain on edges
                     with gw.open(bgrn[1], band_names=unique_quarters) as B3:
-                        B3 = B3.fillna(B3.mean())
+                        B3 = B3.fillna(B3.mean(skipna=True))
                         with gw.open(bgrn[2], band_names=unique_quarters) as B4:
-                            B4 = B4.fillna(B4.mean())
+                            B4 = B4.fillna(B4.mean(skipna=True))
                             with gw.open(bgrn[3], band_names=unique_quarters) as B8:
-                                B8 = B8.fillna(B8.mean())
+                                B8 = B8.fillna(B8.mean(skipna=True))
 
                                 # stack the bands
                                 bands = [
