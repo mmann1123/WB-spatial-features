@@ -122,6 +122,7 @@ from helpers import bounds_tiler, list_files_pattern
 from numpy import nan
 from glob import glob
 import re
+from geowombat.backends.rasterio_ import get_file_bounds
 
 # location of the interpolated image stacks
 os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated")
@@ -139,23 +140,21 @@ images
 # pattern = r"(?<=-)\d+-\d+(?=\.tif)" #gets just southern codes
 pattern = r"linear_*_(.+?)\.tif"
 
-unique_grids = list_files_pattern(images, pattern)
-unique_grids
+# unique_grids = list_files_pattern(images, pattern)
+# unique_grids
 
 # get unique year and quarter
 pattern = r"\d{4}_Q\d{2}"
 unique_quarters = list_files_pattern(glob("../B2/B2*.tif"), pattern)
 unique_quarters
 
-# remove years 2020 and 2024 from unique_quarters (only used for interpolation)
-# unique_quarters = [q for q in unique_quarters if "2020" not in q and "2024" not in q]
 
 # Define the bands in the desired order
 band_order = ["B2", "B3", "B4", "B8"]
 
 
 # for grid in unique_grids:
-for grid in unique_grids[1:2]:
+for grid in ["south", "north"]:
     # get zone for name
     north_south = re.search(r"(north|south)", grid, re.IGNORECASE).group(0)
 
@@ -166,54 +165,63 @@ for grid in unique_grids[1:2]:
     pattern = r"linear_([^_]+?)\.tif"
     grid_code = list_files_pattern(a_grid, pattern)
 
-    # Filter and sort the list
-    bgrn = sorted(
-        (f for f in a_grid if any(f.startswith(b) for b in band_order)),
-        key=lambda x: band_order.index(re.match(r"B\d+", x).group(0)),
+    # get list of files for each band in order B2, B3, B4, B8
+    bgrn = [sorted([f for f in a_grid if f"{band}" in f]) for band in band_order]
+    bounds = get_file_bounds(
+        bgrn[0],
+        bounds_by="union",
+        return_bounds=True,
     )
-    # get list of smaller bounds if needed
-    bounds_list = bounds_tiler(bgrn, max_area=8e10)
-    print(f"Breaking into {len(bounds_list)} bounds boxes:")
 
     for quarter in unique_quarters:
-        for bounds in bounds_list:
-            with gw.config.update(bigtiff="YES", ref_bounds=bounds):
+        with gw.config.update(bigtiff="YES", ref_bounds=bounds):
 
-                # open each band seperately and interate over quarters
-                with gw.open(bgrn[0], band_names=unique_quarters) as B2:
-                    B2 = B2.fillna(
-                        B2.mean(skipna=True)
-                    )  # fill missing values that remain on edges
-                    with gw.open(bgrn[1], band_names=unique_quarters) as B3:
-                        B3 = B3.fillna(B3.mean(skipna=True))
-                        with gw.open(bgrn[2], band_names=unique_quarters) as B4:
-                            B4 = B4.fillna(B4.mean(skipna=True))
-                            with gw.open(bgrn[3], band_names=unique_quarters) as B8:
-                                B8 = B8.fillna(B8.mean(skipna=True))
+            # open each band seperately and interate over quarters
+            with gw.open(
+                bgrn[0], band_names=unique_quarters, mosaic=True, overlap="max"
+            ) as B2:
+                B2 = B2.fillna(
+                    B2.mean(skipna=True)
+                )  # fill missing values that remain on edges
+                with gw.open(
+                    bgrn[1], band_names=unique_quarters, mosaic=True, overlap="max"
+                ) as B3:
+                    B3 = B3.fillna(B3.mean(skipna=True))
+                    with gw.open(
+                        bgrn[2], band_names=unique_quarters, mosaic=True, overlap="max"
+                    ) as B4:
+                        B4 = B4.fillna(B4.mean(skipna=True))
+                        with gw.open(
+                            bgrn[3],
+                            band_names=unique_quarters,
+                            mosaic=True,
+                            overlap="max",
+                        ) as B8:
+                            B8 = B8.fillna(B8.mean(skipna=True))
 
-                                # stack the bands
-                                bands = [
-                                    B2.sel(band=quarter),
-                                    B3.sel(band=quarter),
-                                    B4.sel(band=quarter),
-                                    B8.sel(band=quarter),
-                                ]
-                                out = xr.concat(bands, dim="band")
-                                out.attrs = B2.attrs
+                            # stack the bands
+                            bands = [
+                                B2.sel(band=quarter),
+                                B3.sel(band=quarter),
+                                B4.sel(band=quarter),
+                                B8.sel(band=quarter),
+                            ]
+                            out = xr.concat(bands, dim="band")
+                            out.attrs = B2.attrs
 
-                                print("files:", bgrn)
-                                out = out.astype("float32")
-                                display(out)
-                                # src = src.fillna(0.5)
+                            print("files:", bgrn)
+                            out = out.astype("float32")
+                            display(out)
+                            # src = src.fillna(0.5)
 
-                                out_name = f"{output_dir}/S2_SR_{quarter}_{north_south}_zone_{str(abs(round(bounds[1],2))).replace('.','-')}_{str(abs(round(bounds[3],2))).replace('.','-')}.tif"
-                                out.gw.save(
-                                    filename=out_name,
-                                    nodata=nan,
-                                    overwrite=True,
-                                    num_workers=19,
-                                    compress="lzw",
-                                )
+                            out_name = f"{output_dir}/S2_SR_{quarter}_{north_south}.tif"
+                            out.gw.save(
+                                filename=out_name,
+                                nodata=nan,
+                                overwrite=True,
+                                num_workers=19,
+                                compress="lzw",
+                            )
 
 # ######################################
 # %% convert multiband images to single band
