@@ -29,8 +29,8 @@ bands = [
     "B3",
     "B4",
     "B8",
-    "B11",
-    "B12",
+    # "B11",
+    # "B12",
 ]
 
 os.chdir(
@@ -106,7 +106,7 @@ for band_name in bands:
                     outfile=os.path.join(
                         os.getcwd(),
                         output_dir,
-                        f"{band_name}_S2_SR_linear_interp_{interp_type}_{grid}.tif",
+                        f"{band_name}_S2_SR_interp_{interp_type}_{grid}.tif",
                     ),
                     num_workers=1,  # src.nchunks,
                     bands=1,
@@ -147,6 +147,9 @@ pattern = r"\d{4}_Q\d{2}"
 unique_quarters = list_files_pattern(glob("../B2/B2*.tif"), pattern)
 unique_quarters
 
+# remove years 2020 and 2024 from unique_quarters (only used for interpolation)
+unique_quarters = [q for q in unique_quarters if "2020" not in q and "2024" not in q]
+
 # Define the bands in the desired order
 band_order = ["B2", "B3", "B4", "B8"]
 
@@ -158,6 +161,11 @@ for grid in unique_grids[1:2]:
 
     # isolate the grid
     a_grid = sorted([f for f in images if grid in f])
+
+    # pattern = r"linear_*_(.+?)\.tif"
+    pattern = r"linear_([^_]+?)\.tif"
+    grid_code = list_files_pattern(a_grid, pattern)
+
     # Filter and sort the list
     bgrn = sorted(
         (f for f in a_grid if any(f.startswith(b) for b in band_order)),
@@ -167,7 +175,7 @@ for grid in unique_grids[1:2]:
     bounds_list = bounds_tiler(bgrn, max_area=8e10)
     print(f"Breaking into {len(bounds_list)} bounds boxes:")
 
-    for quarter in unique_quarters[1:2]:
+    for quarter in unique_quarters:
         for bounds in bounds_list:
             with gw.config.update(bigtiff="YES", ref_bounds=bounds):
 
