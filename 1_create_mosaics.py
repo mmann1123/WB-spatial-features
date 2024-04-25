@@ -113,6 +113,7 @@ for band_name in bands:
                     kwargs={"BIGTIFF": "YES"},
                 )
 
+# switch to geowombat env
 # %% attempt bgrn mosaic from interpolated stacks
 import geowombat as gw
 import os
@@ -122,10 +123,15 @@ from numpy import nan
 from glob import glob
 import re
 
+# location of the interpolated image stacks
 os.chdir(r"/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/interpolated")
 os.makedirs("../stacks", exist_ok=True)
 
+# output location
+output_dir = "../mosaic"
+os.makedirs(output_dir, exist_ok=True)
 
+# get image stacks
 images = sorted(glob("*.tif"))
 images
 
@@ -146,7 +152,10 @@ band_order = ["B2", "B3", "B4", "B8"]
 
 
 # for grid in unique_grids:
-for grid in unique_grids[::-1]:
+for grid in unique_grids[1:2]:
+    # get zone for name
+    north_south = re.search(r"(north|south)", grid, re.IGNORECASE).group(0)
+
     # isolate the grid
     a_grid = sorted([f for f in images if grid in f])
     # Filter and sort the list
@@ -155,18 +164,25 @@ for grid in unique_grids[::-1]:
         key=lambda x: band_order.index(re.match(r"B\d+", x).group(0)),
     )
     # get list of smaller bounds if needed
-    bounds_list = bounds_tiler(bgrn, max_area=4e10)
+    bounds_list = bounds_tiler(bgrn, max_area=8e10)
     print(f"Breaking into {len(bounds_list)} bounds boxes:")
 
-    for quarter in unique_quarters:
+    for quarter in unique_quarters[1:2]:
         for bounds in bounds_list:
             with gw.config.update(bigtiff="YES", ref_bounds=bounds):
 
                 # open each band seperately and interate over quarters
                 with gw.open(bgrn[0], band_names=unique_quarters) as B2:
+                    B2 = B2.fillna(
+                        B2.mean()
+                    )  # fill missing values that remain on edges
                     with gw.open(bgrn[1], band_names=unique_quarters) as B3:
+                        B3 = B3.fillna(B3.mean())
                         with gw.open(bgrn[2], band_names=unique_quarters) as B4:
+                            B4 = B4.fillna(B4.mean())
                             with gw.open(bgrn[3], band_names=unique_quarters) as B8:
+                                B8 = B8.fillna(B8.mean())
+
                                 # stack the bands
                                 bands = [
                                     B2.sel(band=quarter),
@@ -181,12 +197,10 @@ for grid in unique_grids[::-1]:
                                 out = out.astype("float32")
                                 display(out)
                                 # src = src.fillna(0.5)
-                                if len(bounds_list) > 1:
-                                    north_south = "south"
-                                else:
-                                    north_south = "north"
+
+                                out_name = f"{output_dir}/S2_SR_{quarter}_{north_south}_zone_{str(abs(round(bounds[1],2))).replace('.','-')}_{str(abs(round(bounds[3],2))).replace('.','-')}.tif"
                                 out.gw.save(
-                                    filename=f"../mosaic/S2_SR_{quarter}_{north_south}_zone_{str(abs(round(bounds[1],2))).replace('.','-')}_{str(abs(round(bounds[3],2))).replace('.','-')}.tif",
+                                    filename=out_name,
                                     nodata=nan,
                                     overwrite=True,
                                     num_workers=19,
