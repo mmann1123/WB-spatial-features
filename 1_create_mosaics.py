@@ -136,12 +136,6 @@ os.makedirs(output_dir, exist_ok=True)
 images = sorted(glob("*.tif"))
 images
 
-# Get unique grid codes
-# pattern = r"(?<=-)\d+-\d+(?=\.tif)" #gets just southern codes
-pattern = r"linear_*_(.+?)\.tif"
-
-# unique_grids = list_files_pattern(images, pattern)
-# unique_grids
 
 # get unique year and quarter
 pattern = r"\d{4}_Q\d{2}"
@@ -174,6 +168,18 @@ for grid in ["south", "north"]:
     )
 
     for quarter in unique_quarters:
+        # skip unnecessary quarters
+        if quarter in [
+            "2020_Q01",
+            "2020_Q02",
+            "2020_Q03",
+            "2020_Q04",
+            "2024_Q01",
+            "2024_Q02",
+        ]:
+            continue
+        print("working on quarter:", quarter, "north_south:", north_south)
+
         with gw.config.update(bigtiff="YES", ref_bounds=bounds):
 
             # open each band seperately and interate over quarters
