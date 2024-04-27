@@ -10,13 +10,11 @@ from functions import *  # import helper functions
 import subprocess
 
 ############### EDIT THE FOLLOWING ################
-imagery_folder = (
-    "/CCAS/groups/engstromgrp/mike/mosaic"  # path to folder containing images
-)
+imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic"  # path to folder containing images ending in .tif
 
 band_order = "bgrn"  # band order for spfeas
 partition = "defq"  # partition for slurm
-time_request = "02-12:35:00"  # time request for slurm DD-HH:MM:SS
+time_request = "04-12:35:00"  # time request for slurm DD-HH:MM:SS
 email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 ################ Don't edit below this line ################

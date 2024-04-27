@@ -18,6 +18,8 @@ def main():
     import re
     from geowombat.backends.rasterio_ import get_file_bounds
     from xarray import concat
+    import dask.array as da
+    import xarray as xr
 
     # location of the interpolated image stacks
     # os.chdir(r"/CCAS/groups/engstromgrp/mike/interpolated/")
@@ -58,10 +60,15 @@ def main():
 
     grid = args.north_or_south
     # get zone for name
-    north_south = re.search(r"(north|south)", grid, re.IGNORECASE).group(0)
+    # north_south = re.search(r"(north|south)", grid, re.IGNORECASE).group(0)
+    north_south = grid  # re.search(r"(north|south)", grid, re.IGNORECASE).group(0)
 
     # isolate the grid
     a_grid = sorted([f for f in images if grid in f])
+
+    # pattern = r"linear_*_(.+?)\.tif"
+    pattern = r"linear_([^_]+?)\.tif"
+    grid_code = list_files_pattern(a_grid, pattern)
 
     # get list of files for each band in order B2, B3, B4, B8
     bgrn = [sorted([f for f in a_grid if f"{band}" in f]) for band in band_order]
@@ -70,7 +77,6 @@ def main():
         bounds_by="union",
         return_bounds=True,
     )
-    print("bgrn:", bgrn)
 
     for quarter in unique_quarters:
         # skip unnecessary quarters
@@ -84,55 +90,138 @@ def main():
         ]:
             continue
         print("working on quarter:", quarter, "north_south:", north_south)
-        with gw.config.update(bigtiff="YES", ref_bounds=bounds):
 
-            # open each band seperately and interate over quarters
-            with gw.open(
-                bgrn[0], band_names=unique_quarters, mosaic=True, overlap="max"
-            ) as B2:
-                B2 = B2.fillna(
-                    B2.mean(skipna=True)
-                )  # fill missing values that remain on edges
+        if north_south == "south":
+            with gw.config.update(bigtiff="YES", ref_bounds=bounds):
+
+                # open each band seperately and interate over quarters
                 with gw.open(
-                    bgrn[1], band_names=unique_quarters, mosaic=True, overlap="max"
-                ) as B3:
-                    B3 = B3.fillna(B3.mean(skipna=True))
+                    bgrn[0][0], band_names=unique_quarters, mosaic=True, overlap="max"
+                ) as B2a:
+                    B2a = B2a.sel(band=quarter)
                     with gw.open(
-                        bgrn[2],
+                        bgrn[0][1],
                         band_names=unique_quarters,
                         mosaic=True,
                         overlap="max",
-                    ) as B4:
+                    ) as B2b:
+                        B2b = B2b.sel(band=quarter)
+                        B2 = da.maximum(
+                            B2a, B2b
+                        )  # mosaic not working w very large files use instead
+                        B2 = B2.fillna(B2.mean(skipna=True))
+
+                with gw.open(
+                    bgrn[1][0],
+                    band_names=unique_quarters,
+                    mosaic=True,
+                    overlap="max",
+                ) as B3a:
+                    B3a = B3a.sel(band=quarter)
+                    with gw.open(
+                        bgrn[1][1],
+                        band_names=unique_quarters,
+                        mosaic=True,
+                        overlap="max",
+                    ) as B3b:
+                        B3b = B3b.sel(band=quarter)
+                        B3 = da.maximum(B3a, B3b)
+                        B3 = B3.fillna(B3.mean(skipna=True))
+
+                with gw.open(
+                    bgrn[2][0],
+                    band_names=unique_quarters,
+                    mosaic=True,
+                    overlap="max",
+                ) as B4a:
+                    B4a = B4a.sel(band=quarter)
+                    with gw.open(
+                        bgrn[2][1],
+                        band_names=unique_quarters,
+                        mosaic=True,
+                        overlap="max",
+                    ) as B4b:
+                        B4b = B4b.sel(band=quarter)
+                        B4 = da.maximum(B4a, B4b)
                         B4 = B4.fillna(B4.mean(skipna=True))
-                        with gw.open(
-                            bgrn[3],
-                            band_names=unique_quarters,
-                            mosaic=True,
-                            overlap="max",
-                        ) as B8:
-                            B8 = B8.fillna(B8.mean(skipna=True))
 
-                            # stack the bands
-                            bands = [
-                                B2.sel(band=quarter),
-                                B3.sel(band=quarter),
-                                B4.sel(band=quarter),
-                                B8.sel(band=quarter),
-                            ]
-                            out = concat(bands, dim="band")
-                            out.attrs = B2.attrs
+                with gw.open(
+                    bgrn[3][0],
+                    band_names=unique_quarters,
+                    mosaic=True,
+                    overlap="max",
+                ) as B8a:
+                    B8a = B8a.sel(band=quarter)
+                    with gw.open(
+                        bgrn[3][1],
+                        band_names=unique_quarters,
+                        mosaic=True,
+                        overlap="max",
+                    ) as B8b:
+                        B8b = B8b.sel(band=quarter)
+                        B8 = da.maximum(B8a, B8b)
+                        B8 = B8.fillna(B8.mean(skipna=True))
 
-                            print("files:", bgrn)
-                            out = out.astype("float32")
+                bands = [B2, B3, B4, B8]
+                out = xr.concat(bands, dim="band")
+                out.attrs = B2.attrs
 
-                            out_name = f"{output_dir}/S2_SR_{quarter}_{north_south}.tif"
-                            out.gw.save(
-                                filename=out_name,
-                                nodata=nan,
-                                overwrite=True,
-                                num_workers=19,
-                                compress="lzw",
-                            )
+                print("files:", bgrn)
+                out = out.astype("float32")
+
+                out_name = f"{output_dir}/S2_SR_{quarter}_{north_south}.tif"
+                out.gw.save(
+                    filename=out_name,
+                    nodata=nan,
+                    overwrite=True,
+                    num_workers=19,
+                    compress="lzw",
+                )
+        else:
+            with gw.open(
+                bgrn[0][0],
+                band_names=unique_quarters,
+            ) as B2:
+
+                B2 = B2.sel(band=quarter)
+                B2 = B2.fillna(B2.mean(skipna=True))
+
+            with gw.open(
+                bgrn[1][0],
+                band_names=unique_quarters,
+            ) as B3:
+                B3 = B3.sel(band=quarter)
+                B3 = B3.fillna(B3.mean(skipna=True))
+
+            with gw.open(
+                bgrn[2][0],
+                band_names=unique_quarters,
+            ) as B4:
+                B4 = B4.sel(band=quarter)
+                B4 = B4.fillna(B4.mean(skipna=True))
+
+            with gw.open(
+                bgrn[3][0],
+                band_names=unique_quarters,
+            ) as B8:
+                B8 = B8.sel(band=quarter)
+                B8 = B8.fillna(B8.mean(skipna=True))  # stack the bands
+
+            bands = [B2, B3, B4, B8]
+            out = xr.concat(bands, dim="band")
+            out.attrs = B2.attrs
+
+            print("files:", bgrn)
+            out = out.astype("float32")
+
+            out_name = f"{output_dir}/S2_SR_{quarter}_{north_south}.tif"
+            out.gw.save(
+                filename=out_name,
+                nodata=nan,
+                overwrite=True,
+                num_workers=19,
+                compress="lzw",
+            )
 
 
 if __name__ == "__main__":
