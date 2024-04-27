@@ -50,6 +50,11 @@ os.makedirs(os.path.join(output_folder, "features"), exist_ok=True)
 # make folder to hold batch scripts
 batch_script_path = os.path.join(output_folder, "spfeas_batch_scripts")
 os.makedirs(batch_script_path, exist_ok=True)
+# remove all files in the folder
+files = glob(os.path.join(batch_script_path, "*.sh"))
+for file in files:
+    os.remove(file)
+
 
 # write the batch script to run all the other batch scripts
 with open(f"{output_folder}/run_all_spfeas_batch_files.sh", "w") as f:
