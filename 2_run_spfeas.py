@@ -8,6 +8,8 @@ import os
 from glob import glob
 from functions import *  # import helper functions
 import subprocess
+from tqdm import tqdm
+from multiprocessing import Pool
 
 ############### EDIT THE FOLLOWING ################
 imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic"  # path to folder containing images ending in .tif
@@ -52,9 +54,11 @@ batch_script_path = os.path.join(output_folder, "spfeas_batch_scripts")
 os.makedirs(batch_script_path, exist_ok=True)
 # remove all files in the folder
 files = glob(os.path.join(batch_script_path, "*.sh"))
-for file in files:
-    os.remove(file)
-
+print("erasing existing batch scripts")
+with Pool() as p:
+    # Use tqdm for progress bar
+    for _ in tqdm(p.imap_unordered(remove_file, files), total=len(files)):
+        pass
 
 # write the batch script to run all the other batch scripts
 with open(f"{output_folder}/run_all_spfeas_batch_files.sh", "w") as f:
@@ -74,7 +78,7 @@ done
     )
 
 # for each image write a batch script
-for image in images:
+for image in tqdm(images, desc="writing new batch scripts"):
     for feature in [
         "fourier",
         "gabor",
