@@ -320,10 +320,14 @@ for grid in ["south", "north"]:
 
 # %%
 # upload to server using rsync
+# individual file
 # scp -v /local/path/example.txt mmann1123@pegasus.arc.gwu.edu:/path/to/remote/destination
 # scp -v /mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/mosaic/S2_SR_2021_Q01_south.tif mmann1123@pegasus.arc.gwu.edu:/CCAS/groups/engstromgrp/mike/mosaic/S2_SR_2021_Q01_south.tif
-
 # scp mmann1123@pegasus.arc.gwu.edu:/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/mosaic/S2_SR_2021_Q01_south.tif /CCAS/groups/engstromgrp/mike/mosaic/S2_SR_2021_Q01_south.tif
+
+# sync a folder
+# rsync -avz /path/to/local/folder/ username@remote_server:/path/to/remote/folder/
+
 
 # %%
 # # %% attempt bgrn mosaic from interpolated stacks
