@@ -56,7 +56,11 @@ os.makedirs(batch_script_path, exist_ok=True)
 files = glob(os.path.join(batch_script_path, "*.sh"))
 with Pool() as p:
     # Use tqdm for progress bar
-    for _ in tqdm(p.imap_unordered(remove_file, files), total=len(files), desc="erasing existing batch scripts"):
+    for _ in tqdm(
+        p.imap_unordered(remove_file, files),
+        total=len(files),
+        desc="erasing existing batch scripts",
+    ):
         pass
 
 # write the batch script to run all the other batch scripts
