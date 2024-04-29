@@ -135,7 +135,7 @@ def process_vrt(vrt):
             file.write(
                 f"""#!/bin/bash
 #SBATCH -p {partition}
-#SBATCH -J {folder}_vrt2tif
+#SBATCH -J {folder}_{scales}_vrt2tif
 #SBATCH --export=NONE
 #SBATCH -t {time_request}
 #SBATCH --mail-type=ALL
