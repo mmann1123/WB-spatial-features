@@ -9,7 +9,7 @@ source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs"
 
 
 # Define the target directory where you want the files to be organized
-target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs_organized"
+target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs_organized2"
 
 
 # List of features for easy access
@@ -65,3 +65,10 @@ for file in files:
             )
     else:
         print(f"Filename {file} does not match the expected pattern.")
+#%% copy back
+# from glob import glob
+# import os
+# target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs_organized"
+# os.chdir(target_directory)
+
+# glob('*/*')
