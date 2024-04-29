@@ -61,7 +61,7 @@ if not images:
     raise ValueError("No images found in the folder")
 
 # set output folder
-output_folder = os.path.join(base_path, "spfeas_outputs")
+output_folder = os.path.join(base_path, "spfeas_outputs2")
 os.makedirs(output_folder, exist_ok=True)
 os.makedirs(os.path.join(output_folder, "features"), exist_ok=True)
 
