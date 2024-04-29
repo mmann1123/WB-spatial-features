@@ -105,30 +105,34 @@ def process_vrt(vrt):
     # get folder name
     folder = get_vrt_folder_name(vrt)
 
-    print(
-        "Processing feature: ",
-        feature,
-        " with scales: ",
-        scales,
-        " in folder: ",
-        folder,
-    )
+    band_count = 0
 
-    # bashscript output file name
-    bash_script_name = f"{folder}_vrt_to_tif.sh"
+    for scale in scales:
 
-    # create bash script path
-    path_to_bash_script = os.path.join(batch_script_path, bash_script_name)
+        print(
+            "Processing feature: ",
+            feature,
+            " with scales: ",
+            scales,
+            " in folder: ",
+            folder,
+        )
 
-    # delete the file if it exists
-    if os.path.exists(path_to_bash_script):
-        os.remove(path_to_bash_script)
-    # print("Writing bash file to: ", path_to_bash_script)
+        # bashscript output file name
+        bash_script_name = f"{folder}_{scale}_vrt_to_tif.sh"
 
-    # Write SBATCH header
-    with open(os.path.join(path_to_bash_script), "a+") as file:
-        file.write(
-            f"""#!/bin/bash
+        # create bash script path
+        path_to_bash_script = os.path.join(batch_script_path, bash_script_name)
+
+        # delete the file if it exists
+        if os.path.exists(path_to_bash_script):
+            os.remove(path_to_bash_script)
+        # print("Writing bash file to: ", path_to_bash_script)
+
+        # Write SBATCH header
+        with open(os.path.join(path_to_bash_script), "a+") as file:
+            file.write(
+                f"""#!/bin/bash
 #SBATCH -p {partition}
 #SBATCH -J {folder}_vrt2tif
 #SBATCH --export=NONE
@@ -144,18 +148,14 @@ source activate Ryan_CondaEnvP2.7
 # This script takes the VRT files (the output of spfeas) and extracts the VRT
 # band-by-band, assigning each band according to its output name. The order of
 # outputs is determined from the spfeas package.
+        
+    """
+            )
 
-               
-"""
-        )
+        # Open file and add comment indicating the scale and the output
+        with open(os.path.join(path_to_bash_script), "a+") as file:
+            file.write(f"###################### \n #{folder.upper()}\n\n")
 
-    band_count = 0
-
-    # Open file and add comment indicating the scale and the output
-    with open(os.path.join(path_to_bash_script), "a+") as file:
-        file.write(f"###################### \n #{folder.upper()}\n\n")
-
-    for scale in scales:
         for output in feature_bands_table[feature]:
 
             # Open file and add comment indicating the scale and the output
