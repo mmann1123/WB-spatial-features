@@ -44,7 +44,7 @@ if not images:
     raise ValueError("No images found in the folder")
 
 # set output folder
-output_folder = os.path.join(base_path, "spfeas_outputs")
+output_folder = os.path.join(base_path, "spfeas_outputs2")
 os.makedirs(output_folder, exist_ok=True)
 os.makedirs(os.path.join(output_folder, "features"), exist_ok=True)
 
@@ -82,18 +82,18 @@ done
 
 # for each image write a batch script
 for image in tqdm(images, desc="writing new batch scripts"):
-    for feature in [
-        "fourier",
-        "gabor",
-        "hog",
-        "lac",
-        "lbpm",
-        "mean",
-        "ndvi",
-        "orb",
-        "pantex",
-        "sfs",
-    ]:
+    # for feature in [
+    #     "fourier",
+    #     "gabor",
+    #     "hog",
+    #     "lac",
+    #     "lbpm",
+    #     "mean",
+    #     "ndvi",
+    #     "orb",
+    #     "pantex",
+    #     "sfs",
+    # ]:
 
         # get file name without extension
         image_name = os.path.splitext(os.path.basename(image))[0]
