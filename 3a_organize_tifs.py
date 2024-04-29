@@ -1,6 +1,8 @@
+#%%
 import os
 import re
 import shutil
+from helpers import get_quarter_dates
 
 # Define the source directory where your files are currently stored
 source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs"
@@ -23,7 +25,7 @@ features = [
     "pantex",
     "sfs",
 ]
-
+ 
 # Make sure target directory exists
 os.makedirs(target_directory, exist_ok=True)
 
@@ -42,11 +44,11 @@ for file in files:
         quarter = match.group(1)
         direction = match.group(2)
         feature = match.group(3)
-
+        start,end = get_quarter_dates(quarter)
         # Check if the feature is in the list to process
         if feature in features:
             # Create the directory structure if it doesn't exist
-            dir_path = os.path.join(target_directory, direction, f"{feature}_{quarter}")
+            dir_path = os.path.join(target_directory, direction, f"{feature}_{start}_{end}")
             os.makedirs(dir_path, exist_ok=True)
 
             # Define the new file path
