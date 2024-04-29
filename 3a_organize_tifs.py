@@ -55,7 +55,7 @@ for file in files:
             new_file_path = os.path.join(dir_path, file)
 
             # Move the file to the new location
-            shutil.move(os.path.join(source_directory, file), new_file_path)
+            shutil.copy2(os.path.join(source_directory, file), new_file_path)
             print(f"Moved {file} to {new_file_path}")
         else:
             print(
