@@ -26,6 +26,36 @@ from geowombat.backends.rasterio_ import get_file_bounds
 from shapely.geometry import Polygon
 import geopandas as gpd
 from math import ceil
+import pendulum
+
+
+def get_quarter_dates(quarter_str):
+    """Get the start and end dates for a quarter
+    Args:
+        quarter_str (str): Quarter string in the format "YYYY_QN"
+    Returns:
+        tuple: (start_date, end_date) in the format "YYYY-MM-DD"
+
+    # Example usage
+    start, end = get_quarter_dates("2021_Q03")
+    print(f"Start: {start}, End: {end}")
+    """
+
+    # Parse the year and quarter number
+    year, q = map(int, quarter_str.split("_Q"))
+
+    # Calculate the first month of the quarter
+    start_month = 3 * (q - 1) + 1
+
+    # Create a date for the first day of the quarter
+    start_date = pendulum.date(year, start_month, 1)
+
+    # Get the last day of the quarter by adding 3 months and subtracting 1 day
+    end_date = start_date.add(months=3).subtract(days=1)
+    print(type(start_date))
+    # Return formatted dates
+    return start_date.format("YYYY_MM_DD"), end_date.format("YYYY_MM_DD")
+
 
 # def mask_water(image):
 #     """Mask water using MNDWI index. MNDWI = (Green - SWIR) / (Green + SWIR)
