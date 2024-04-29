@@ -39,11 +39,13 @@ files = [
 # Process each file
 for file in files:
     # Extract information from the filename
-    match = re.match(r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_.*\.tif", file)
+    match = re.match(r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_SC(\d+)_([a-zA-Z0-9_]+)\.tif", file)
     if match:
         quarter = match.group(1)
         direction = match.group(2)
         feature = match.group(3)
+        sc_number = match.group(4)
+        descriptor = match.group(5)
         start,end = get_quarter_dates(quarter)
         # Check if the feature is in the list to process
         if feature in features:
@@ -52,10 +54,10 @@ for file in files:
             os.makedirs(dir_path, exist_ok=True)
 
             # Define the new file path
-            new_file_path = os.path.join(dir_path, file)
+            new_file_path = os.path.join(dir_path, f'{feature}_sc{sc_number}_{descriptor}.tif')
 
             # Move the file to the new location
-            shutil.copy2(os.path.join(source_directory, file), new_file_path)
+            # shutil.copy2(os.path.join(source_directory, file), new_file_path)
             print(f"Moved {file} to {new_file_path}")
         else:
             print(
