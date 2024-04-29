@@ -102,6 +102,11 @@ def process_vrt(vrt):
     scales = get_scales(vrt)
     # get feature name
     feature = get_feature_name(vrt)
+
+    # skip if not gabor
+    if feature != "gabor":
+        return None
+
     # get folder name
     folder = get_vrt_folder_name(vrt)
 
