@@ -19,6 +19,22 @@ partition = "defq"  # partition for slurm
 time_request = "04-12:35:00"  # time request for slurm DD-HH:MM:SS
 email = "mmann1123@gwu.edu"  # email for slurm notifications
 
+# features to run and what scales
+feature_scale_dict = {
+    "gabor": [3, 5, 7],
+    "hog": [3, 5, 7],
+    "lac": [3, 5, 7],
+    "lbpm": [3, 5, 7],
+    "mean": [3, 5, 7],
+    "ndvi": [3, 5, 7],
+    "pantex": [3, 5, 7],
+    "sfs": [31, 51, 71],
+    "fourier": [31, 51, 71],
+    "orb": [31, 51, 71],
+}
+
+image_name_subset = "*south*"  # subset of images to process, use '*' for all images
+
 ################ Don't edit below this line ################
 
 # check for errors in slurm partition and time request
@@ -33,7 +49,8 @@ if band_order not in ["bgrn", "rgbn", "rgb", "bgr"]:
 base_path = os.path.dirname(imagery_folder)
 
 # find all input images to process
-images = glob(f"{imagery_folder}/*.tif")
+images = glob(f"{imagery_folder}/{image_name_subset}.tif")
+
 print("Number of images found:", len(images))
 if len(images) < 6:
     print("Example", images[0])
@@ -44,7 +61,7 @@ if not images:
     raise ValueError("No images found in the folder")
 
 # set output folder
-output_folder = os.path.join(base_path, "spfeas_outputs2")
+output_folder = os.path.join(base_path, "spfeas_outputs")
 os.makedirs(output_folder, exist_ok=True)
 os.makedirs(os.path.join(output_folder, "features"), exist_ok=True)
 
@@ -82,34 +99,26 @@ done
 
 # for each image write a batch script
 for image in tqdm(images, desc="writing new batch scripts"):
-    # for feature in [
-    #     "fourier",
-    #     "gabor",
-    #     "hog",
-    #     "lac",
-    #     "lbpm",
-    #     "mean",
-    #     "ndvi",
-    #     "orb",
-    #     "pantex",
-    #     "sfs",
-    # ]:
+    for feature, scales in feature_scale_dict.items():
 
         # get file name without extension
         image_name = os.path.splitext(os.path.basename(image))[0]
 
+        # unpack scales as space separated string
+        scale_text = " ".join([str(scale) for scale in scales])
+
         # write the batch script
-        with open(f"{batch_script_path}/{image_name}.sh", "w") as f:
+        with open(f"{batch_script_path}/{image_name}_{feature}.sh", "w") as f:
             f.write(
                 f"""#!/bin/bash
 #SBATCH -p {partition}
-#SBATCH -J spfeas_{image_name}_run
+#SBATCH -J sp_{feature}_{image_name}_run
 #SBATCH --export=NONE
 #SBATCH -t {time_request}
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user={email} 
-#SBATCH -e {batch_script_path}/{image_name}.err
-#SBATCH -o {batch_script_path}/{image_name}.out
+#SBATCH -e {batch_script_path}/{image_name}_{feature}.err
+#SBATCH -o {batch_script_path}/{image_name}_{feature}.out
 
 
 export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
@@ -117,18 +126,8 @@ source activate Ryan_CondaEnvP2.7
 
 # output folders will be created automatically
 # scales 3, 5, 7
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_mean')} --block 1 --scales 3 5 7 --tr mean --overwrite
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_gabor')} --vis-order {band_order} --block 1 --scales 3 5 7 --tr gabor --overwrite
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_hog')} --vis-order {band_order} --block 1 --scales 3 5 7 --tr hog --overwrite
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lac')} --vis-order {band_order} --block 1 --scales 3 5 7 --tr lac --overwrite
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_lbpm')} --vis-order {band_order} --block 1 --scales 3 5 7 --tr lbpm --overwrite
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_ndvi')} --vis-order {band_order} --block 1 --scales 3 5 7 --tr ndvi --overwrite
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_pantex')} --vis-order {band_order} --block 1 --scales 3 5 7 --tr pantex --overwrite
+spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_'+feature)} --block 1 --scales {scale_text} --tr {feature} --overwrite
 
-# scales 31, 51, 71
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_sfs')} --vis-order {band_order} --block 1 --scales 31 51 71 --tr sfs --overwrite
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_fourier')} --vis-order {band_order} --block 1 --scales 31 51 71 --tr fourier --overwrite
-spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_orb')} --vis-order {band_order} --block 1 --scales 31 51 71 --tr orb --overwrite
 """
             )
 
