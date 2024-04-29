@@ -103,10 +103,6 @@ def process_vrt(vrt):
     # get feature name
     feature = get_feature_name(vrt)
 
-    # skip if not gabor
-    if feature != "gabor":
-        return None
-
     # get folder name
     folder = get_vrt_folder_name(vrt)
 
@@ -179,7 +175,7 @@ source activate Ryan_CondaEnvP2.7
             # Open file and write the gdal command to extract the bands and write to tif
             with open(os.path.join(path_to_bash_script), "a+") as file:
                 file.write(
-                    f'gdal_translate -b {band_count} -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" {vrt} {output_tif}\n\n'
+                    f'gdal_translate -b {band_count} -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" -overwrite  {vrt} {output_tif}\n\n'
                 )
 
 
