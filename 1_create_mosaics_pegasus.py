@@ -33,7 +33,24 @@ def main():
     images = glob(f"*.tif")
     images
 
-    # get unique year and quarter
+    quarters_to_skip = [
+        "2021_Q01",
+        "2021_Q02",
+        "2021_Q03",
+        "2021_Q04",
+        "2022_Q01",
+        "2022_Q02",
+        "2022_Q03",
+        "2022_Q04",
+        "2023_Q01",
+        "2023_Q02",
+        "2023_Q03",
+        "2023_Q04",
+        "2024_Q01",
+        "2024_Q02",
+    ]
+
+    # list all unique year and quarter
     unique_quarters = [
         "2020_Q01",
         "2020_Q02",
@@ -80,22 +97,12 @@ def main():
 
     for quarter in unique_quarters:
         # skip unnecessary quarters
-        if quarter in [
-            # "2024_Q01",
-            # "2024_Q02",
-            # "2021_Q03",
-            # "2021_Q04",
-            # "2022_Q01",
-            # "2022_Q02",
-            # "2022_Q03",
-            # "2022_Q04",
-            # "2023_Q01",
-            # "2023_Q02",
-            # "2023_Q03",
-            # "2023_Q04",
-            "2024_Q01",
-            "2024_Q02",
-        ]:
+        if quarter in quarters_to_skip:
+            print(
+                "########################################\n skipping quarter:",
+                quarter,
+                "########################################",
+            )
             continue
         print("working on quarter:", quarter, "north_south:", north_south)
 
