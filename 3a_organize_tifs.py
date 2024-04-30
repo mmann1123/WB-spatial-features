@@ -1,15 +1,15 @@
-#%%
+# %%
 import os
 import re
 import shutil
 from helpers import get_quarter_dates
 
 # Define the source directory where your files are currently stored
-source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs"
+source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/tifs"
 
 
 # Define the target directory where you want the files to be organized
-target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs_organized2"
+target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/tifs_organized"
 
 
 # List of features for easy access
@@ -25,7 +25,7 @@ features = [
     "pantex",
     "sfs",
 ]
- 
+
 # Make sure target directory exists
 os.makedirs(target_directory, exist_ok=True)
 
@@ -39,22 +39,29 @@ files = [
 # Process each file
 for file in files:
     # Extract information from the filename
-    match = re.match(r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_SC(\d+)_([a-zA-Z0-9_]+)\.tif", file)
+    match = re.match(
+        r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_SC(\d+)_([a-zA-Z0-9_]+)\.tif",
+        file,
+    )
     if match:
         quarter = match.group(1)
         direction = match.group(2)
         feature = match.group(3)
         sc_number = match.group(4)
         descriptor = match.group(5)
-        start,end = get_quarter_dates(quarter)
+        start, end = get_quarter_dates(quarter)
         # Check if the feature is in the list to process
         if feature in features:
             # Create the directory structure if it doesn't exist
-            dir_path = os.path.join(target_directory, direction, f"{feature}_{start}_{end}")
+            dir_path = os.path.join(
+                target_directory, direction, f"{feature}_{start}_{end}"
+            )
             os.makedirs(dir_path, exist_ok=True)
 
             # Define the new file path
-            new_file_path = os.path.join(dir_path, f'{feature}_sc{sc_number}_{descriptor}.tif')
+            new_file_path = os.path.join(
+                dir_path, f"{feature}_sc{sc_number}_{descriptor}.tif"
+            )
 
             # Move the file to the new location
             # shutil.copy2(os.path.join(source_directory, file), new_file_path)
@@ -65,7 +72,7 @@ for file in files:
             )
     else:
         print(f"Filename {file} does not match the expected pattern.")
-#%% copy back
+# %% copy back
 # from glob import glob
 # import os
 # target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs_organized"
