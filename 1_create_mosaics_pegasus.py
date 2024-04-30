@@ -81,10 +81,6 @@ def main():
     for quarter in unique_quarters:
         # skip unnecessary quarters
         if quarter in [
-            "2020_Q01",
-            "2020_Q02",
-            "2020_Q03",
-            "2020_Q04",
             "2024_Q01",
             "2024_Q02",
         ]:
