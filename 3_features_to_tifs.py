@@ -6,6 +6,8 @@
 # python 3_features_to_tifs.py
 # Import modules
 
+# NOTE gabor takes 9 hours to process most others less than 2 hours . consider spliting gabor
+
 # %%
 import os
 from glob import glob
