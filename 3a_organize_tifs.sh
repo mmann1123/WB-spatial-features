@@ -10,5 +10,5 @@
 
 
 source  ~/miniforge3/envs/geowombat/bin/python
-
+pip install pendulum 
 python 3a_organize_tifs.py 
