@@ -63,6 +63,16 @@ slurm_output_directory = os.path.join(
 )
 os.makedirs(slurm_output_directory, exist_ok=True)
 
+# erase old slurm outputs
+files = glob(os.path.join(slurm_output_directory, "*.err")) + glob(
+    os.path.join(slurm_output_directory, "*.out")
+)
+
+with Pool() as p:
+    # Use tqdm for progress bar
+    for _ in tqdm(p.imap_unordered(remove_file, files), total=len(files)):
+        pass
+
 
 # write the batch script to run all the other batch scripts
 with open(
