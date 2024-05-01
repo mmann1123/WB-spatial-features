@@ -2,76 +2,74 @@
 import os
 import re
 import shutil
+import logging
+from multiprocessing import Pool
 from helpers import get_quarter_dates
 
-# Define the source directory where your files are currently stored
+# Initialize logging
+logging.basicConfig(filename="file_transfer_log.log", level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Define the source and target directories
 source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/tifs"
-
-
-# Define the target directory where you want the files to be organized
 target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/tifs_organized"
 
-
-# List of features for easy access
-features = [
-    "fourier",
-    "gabor",
-    "hog",
-    "lac",
-    "lbpm",
-    "mean",
-    "ndvi",
-    "orb",
-    "pantex",
-    "sfs",
-]
-
-# Make sure target directory exists
+# Ensure the target directory exists
 os.makedirs(target_directory, exist_ok=True)
+
+# List of features to process
+features = [
+    "fourier", "gabor", "hog", "lac", "lbpm", "mean", "ndvi", "orb", "pantex", "sfs",
+]
 
 # Get all files in the source directory
 files = [
-    f
-    for f in os.listdir(source_directory)
-    if os.path.isfile(os.path.join(source_directory, f))
+    f for f in os.listdir(source_directory) if os.path.isfile(os.path.join(source_directory, f))
 ]
 
-# Process each file
-for file in files:
-    # Extract information from the filename
+# Function to handle file processing
+def process_file(file):
     match = re.match(
         r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_SC(\d+)_([a-zA-Z0-9_]+)\.tif",
-        file,
+        file
     )
     if match:
-        quarter = match.group(1)
-        direction = match.group(2)
-        feature = match.group(3)
-        sc_number = match.group(4)
-        descriptor = match.group(5)
+        quarter, direction, feature, sc_number, descriptor = match.groups()
         start, end = get_quarter_dates(quarter)
-        # Check if the feature is in the list to process
         if feature in features:
-            # Create the directory structure if it doesn't exist
-            dir_path = os.path.join(
-                target_directory, direction, f"{feature}_{start}_{end}"
-            )
+            dir_path = os.path.join(target_directory, direction, f"{feature}_{start}_{end}")
             os.makedirs(dir_path, exist_ok=True)
-
-            # Define the new file path
-            new_file_path = os.path.join(
-                dir_path, f"{feature}_sc{sc_number}_{descriptor}.tif"
-            )
-
-            # Move the file to the new location
-            # shutil.copy2(os.path.join(source_directory, file), new_file_path)
-            print(f"Moved {file} to {new_file_path}")
+            new_file_path = os.path.join(dir_path, f"{feature}_sc{sc_number}_{descriptor}.tif")
+            shutil.copy2(os.path.join(source_directory, file), new_file_path)
+            return "success", file, new_file_path
         else:
-            print(
-                f"Feature {feature} in file {file} is not recognized or not in the list."
-            )
+            return "error", file, "Feature not recognized"
     else:
-        print(f"Filename {file} does not match the expected pattern.")
+        return "error", file, "Filename pattern mismatch"
+
+# Run processing with multiprocessing
+if __name__ == '__main__':
+    success_count = 0
+    error_count = 0
+
+    with Pool() as pool:
+        results = pool.imap_unordered(process_file, files)
+        for status, src, message in results:
+            if status == "success":
+                logging.info(f"Copied {src} to {message}")
+                success_count += 1
+            else:
+                logging.error(f"Error with {src}: {message}")
+                error_count += 1
+
+    # Print summary of the processing
+    logging.info(f"Total files processed: {len(files)}")
+    logging.info(f"Successful transfers: {success_count}")
+    logging.info(f"Failed transfers: {error_count}")
+    print(f"Total files processed: {len(files)}")
+    print(f"Successful transfers: {success_count}")
+    print(f"Failed transfers: {error_count}")
+
 # %% copy back
 # from glob import glob
 # import os
