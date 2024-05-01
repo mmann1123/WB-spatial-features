@@ -178,7 +178,7 @@ source activate Ryan_CondaEnvP2.7
             # Open file and write the gdal command to extract the bands and write to tif
             with open(os.path.join(path_to_bash_script), "a+") as file:
                 file.write(
-                    f'gdal_translate -b {band_count} -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" -overwrite  {vrt} {output_tif}\n\n'
+                    f'gdal_translate -b {band_count} -of GTiff -co "COMPRESS=LZW" -co "BIGTIFF=YES" {vrt} {output_tif}\n\n'
                 )
 
 
