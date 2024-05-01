@@ -21,10 +21,12 @@ from tqdm import tqdm
 # path to folder containing outputs from spfeas (e.g. folders ending in _mean _gabor etc),
 # should be  {imagery_folder}/features from 2_run_spfeas.py
 
-feature_vrt_output_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/features"
+feature_vrt_output_directory = (
+    r"/CCAS/groups/engstromgrp/mike/spfeas_outputs_2020/features"
+)
 
 partition = "short"  # partition for slurm
-time_request = "00-23:55:00"  # time request for slurm DD-HH:MM:SS
+time_request = "01-00:00:00"  # time request for slurm DD-HH:MM:SS
 email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 
