@@ -26,7 +26,7 @@ feature_vrt_output_directory = (
 )
 
 partition = "short"  # partition for slurm
-time_request = "01-00:00:00"  # time request for slurm DD-HH:MM:SS
+time_request = "00-23:00:00"  # time request for slurm DD-HH:MM:SS
 email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 
