@@ -14,6 +14,10 @@ from multiprocessing import Pool
 ############### EDIT THE FOLLOWING ################
 imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic_2020"  # path to folder containing images ending in .tif
 
+output_folder_name = (
+    "spfeas_outputs_2020"  # name of folder to hold spfeas outputs not path
+)
+
 band_order = "bgrn"  # band order for spfeas
 partition = "defq"  # partition for slurm
 time_request = "04-12:35:00"  # time request for slurm DD-HH:MM:SS
@@ -61,7 +65,7 @@ if not images:
     raise ValueError("No images found in the folder")
 
 # set output folder
-output_folder = os.path.join(base_path, "spfeas_outputs2")
+output_folder = os.path.join(base_path, output_folder_name)
 os.makedirs(output_folder, exist_ok=True)
 os.makedirs(os.path.join(output_folder, "features"), exist_ok=True)
 
