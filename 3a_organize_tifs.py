@@ -5,10 +5,14 @@ import shutil
 import logging
 from multiprocessing import Pool
 from helpers import get_quarter_dates
+from tqdm import tqdm
 
 # Initialize logging
-logging.basicConfig(filename="file_transfer_log.log", level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename="file_transfer_log.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 # Define the source and target directories
 source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/tifs"
@@ -19,27 +23,43 @@ os.makedirs(target_directory, exist_ok=True)
 
 # List of features to process
 features = [
-    "fourier", "gabor", "hog", "lac", "lbpm", "mean", "ndvi", "orb", "pantex", "sfs",
+    "fourier",
+    "gabor",
+    "hog",
+    "lac",
+    "lbpm",
+    "mean",
+    "ndvi",
+    "orb",
+    "pantex",
+    "sfs",
 ]
 
 # Get all files in the source directory
 files = [
-    f for f in os.listdir(source_directory) if os.path.isfile(os.path.join(source_directory, f))
+    f
+    for f in os.listdir(source_directory)
+    if os.path.isfile(os.path.join(source_directory, f))
 ]
+
 
 # Function to handle file processing
 def process_file(file):
     match = re.match(
         r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_SC(\d+)_([a-zA-Z0-9_]+)\.tif",
-        file
+        file,
     )
     if match:
         quarter, direction, feature, sc_number, descriptor = match.groups()
         start, end = get_quarter_dates(quarter)
         if feature in features:
-            dir_path = os.path.join(target_directory, direction, f"{feature}_{start}_{end}")
+            dir_path = os.path.join(
+                target_directory, direction, f"{feature}_{start}_{end}"
+            )
             os.makedirs(dir_path, exist_ok=True)
-            new_file_path = os.path.join(dir_path, f"{feature}_sc{sc_number}_{descriptor}.tif")
+            new_file_path = os.path.join(
+                dir_path, f"{feature}_sc{sc_number}_{descriptor}.tif"
+            )
             shutil.copy2(os.path.join(source_directory, file), new_file_path)
             return "success", file, new_file_path
         else:
@@ -47,13 +67,15 @@ def process_file(file):
     else:
         return "error", file, "Filename pattern mismatch"
 
+
 # Run processing with multiprocessing
-if __name__ == '__main__':
+if __name__ == "__main__":
     success_count = 0
     error_count = 0
 
     with Pool() as pool:
-        results = pool.imap_unordered(process_file, files)
+        # Wrap 'files' with tqdm for a progress bar
+        results = pool.imap_unordered(process_file, tqdm(files, total=len(files)))
         for status, src, message in results:
             if status == "success":
                 logging.info(f"Copied {src} to {message}")
