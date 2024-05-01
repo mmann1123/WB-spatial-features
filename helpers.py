@@ -5,7 +5,22 @@ except ImportError:
         "earthengine-api is not installed. Please install it to use the GEE functions."
     )
     ee = None
+try:
+    from geowombat.backends.rasterio_ import get_file_bounds
 
+except ImportError:
+    print(
+        "geowombat is not installed. Please install it to use the geowombat functions."
+    )
+    ee = None
+try:
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+except ImportError:
+    print(
+        "geopandas is not installed. Please install it to use the geopandas functions."
+    )
+    ee = None
 
 # CLOUD_FILTER = 30 set by user
 # CLD_PRB_THRESH = 80
@@ -22,9 +37,6 @@ except ImportError:
 # BUFFER = 100
 
 import json
-from geowombat.backends.rasterio_ import get_file_bounds
-from shapely.geometry import Polygon
-import geopandas as gpd
 from math import ceil
 import pendulum
 
