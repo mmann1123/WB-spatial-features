@@ -52,7 +52,7 @@ def get_quarter_dates(quarter_str):
 
     # Get the last day of the quarter by adding 3 months and subtracting 1 day
     end_date = start_date.add(months=3).subtract(days=1)
-    print(type(start_date))
+
     # Return formatted dates
     return start_date.format("YYYY_MM_DD"), end_date.format("YYYY_MM_DD")
 
