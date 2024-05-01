@@ -12,7 +12,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 
 ############### EDIT THE FOLLOWING ################
-imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic"  # path to folder containing images ending in .tif
+imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic_2020"  # path to folder containing images ending in .tif
 
 band_order = "bgrn"  # band order for spfeas
 partition = "defq"  # partition for slurm
