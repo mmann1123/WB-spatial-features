@@ -15,7 +15,7 @@ logging.basicConfig(
 )
 
 # Define the source and target directories
-source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/tifs"
+source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs_2020/tifs"
 target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/tifs_organized"
 
 # Ensure the target directory exists
