@@ -9,7 +9,6 @@
 #SBATCH -o write_tifs.out
 
 
-export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
-source activate geowombat
+source  ~/miniforge3/envs/geowombat/bin/python
 
 python 3a_organize_tifs.py 
