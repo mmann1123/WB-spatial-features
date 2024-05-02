@@ -1,27 +1,3 @@
-try:
-    import ee
-except ImportError:
-    print(
-        "earthengine-api is not installed. Please install it to use the GEE functions."
-    )
-    ee = None
-try:
-    from geowombat.backends.rasterio_ import get_file_bounds
-
-except ImportError:
-    print(
-        "geowombat is not installed. Please install it to use the geowombat functions."
-    )
-    ee = None
-try:
-    import geopandas as gpd
-    from shapely.geometry import Polygon
-except ImportError:
-    print(
-        "geopandas is not installed. Please install it to use the geopandas functions."
-    )
-    ee = None
-
 # CLOUD_FILTER = 30 set by user
 # CLD_PRB_THRESH = 80
 # NIR_DRK_THRESH = 1
@@ -37,8 +13,6 @@ except ImportError:
 # BUFFER = 100
 
 import json
-from math import ceil
-import pendulum
 
 
 def get_quarter_dates(quarter_str):
@@ -52,6 +26,7 @@ def get_quarter_dates(quarter_str):
     start, end = get_quarter_dates("2021_Q03")
     print(f"Start: {start}, End: {end}")
     """
+    import pendulum
 
     # Parse the year and quarter number
     year, q = map(int, quarter_str.split("_Q"))
@@ -125,6 +100,10 @@ def bounds_tiler(image_list, max_area=2.5e10):
                         )
 
     """
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+    from geowombat.backends.rasterio_ import get_file_bounds
+
     bounds = get_file_bounds(
         image_list,
         return_bounds=True,
@@ -187,6 +166,8 @@ def convert_to_float(image):
 
 
 def add_cloud_bands(img, CLD_PRB_THRESH):
+    import ee
+
     """Add cloud probability and cloud mask bands to image.
     Args:
         img: ee.Image
@@ -213,6 +194,7 @@ def add_shadow_bands(img, NIR_DRK_THRESH, CLD_PRJ_DIST):
     Returns:
         ee.Image
     """
+    import ee
 
     # Identify water pixels from the SCL band.
     not_water = img.select("SCL").neq(6)
@@ -270,6 +252,7 @@ def add_cld_shdw_mask(
     Returns:
         ee.Image
     """
+    import ee
 
     # Add cloud component bands.
 
@@ -309,6 +292,7 @@ def get_s2A_SR_sr_cld_collection(
     Returns:
         ee.ImageCollection
     """
+    import ee
 
     print("get_s2A_SR_sr_cld_collection")
     print("Cloud Filter:", CLOUD_FILTER)
@@ -355,6 +339,7 @@ def get_s2A_SR_sr_cld_col(
     Returns:
         ee.ImageCollection
     """
+    import ee
 
     # Import and filter S2 SR.
     s2_sr_col = (
@@ -397,6 +382,7 @@ def apply_masks(img, CLD_PRB_THRESH=30, NIR_DRK_THRESH=0.15, CLD_PRJ_DIST=1, BUF
     Returns:
         ee.Image
     """
+    import ee
 
     img_cloud = add_cloud_bands(img, CLD_PRB_THRESH)
     img_cloud_shadow = add_shadow_bands(img_cloud, NIR_DRK_THRESH, CLD_PRJ_DIST)
@@ -422,6 +408,7 @@ def apply_cld_shdw_mask(img):
     Returns:
         ee.Image
     """
+    import ee
 
     # Subset the cloudmask band and invert it so clouds/shadow are 0, else 1.
     not_cld_shdw = img.select("cloudmask").Not()
@@ -444,6 +431,8 @@ def create_ee_polygon_from_geojson(geojson_path):
     - FileNotFoundError: If the .geojson file does not exist at the specified path
     - ValueError: If the .geojson structure is not supported
     """
+    import ee
+
     try:
         # Load the GeoJSON file
         geojson = json.load(geojson_path)
