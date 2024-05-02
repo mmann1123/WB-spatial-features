@@ -15,7 +15,7 @@ import logging
 from pathlib import Path
 from helpers import get_quarter_dates
 
-zones = ["north", "south"]
+zones = ["south"]  # "north",
 output_path = "../time_features"
 
 complete_times_series_list = {
@@ -61,11 +61,17 @@ logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(message)s",
 )
 
+# Set up logging
+logging.basicConfig(
+    filename=f"{output_path}/error_log.log",
+    level=logging.INFO,  # Change level to INFO to log everything
+    format="%(asctime)s:%(levelname)s:%(message)s",
+)
 
 for zone in zones:
     a_zone = sorted([f for f in images if zone in f])
 
-    for band_name in ["B12", "B11", "B8"]:
+    for band_name in ["B8"]:  # "B12", "B11",
 
         # isolate the grid
         a_band = sorted([f for f in a_zone if band_name in f])
@@ -145,6 +151,8 @@ for zone in zones:
                                 bands=1,
                                 kwargs={"BIGTIFF": "YES", "compress": "LZW"},
                             )
+                            # Log the output
+                            logging.info(f"outfile: {outfile}")
                         except Exception as e:
                             logging.error(
                                 f"Error extracting features from {band_name} {func_name} {a_period[-1]}: {e}"
