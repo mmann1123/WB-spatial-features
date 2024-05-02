@@ -82,8 +82,8 @@ for band in bands:
         [f_south1, f_south2, fc_north], ["south1", "south2", "north"]
     ):
         q_finished = []
-        for year in list(range(2020, 2025)):  # 2021-2023
-            for month in list(range(1, 13)):
+        for year in list(range(2020, 2025)):  #  2021-2023
+            for month in list(range(1, 13)):  #
 
                 dt = pendulum.datetime(year, month, 1)
                 # avoid repeating same quarter
@@ -140,6 +140,28 @@ for band in bands:
                 task = ee.batch.Export.image(s2_sr, img_name, export_config)
                 task.start()
 
+                # for a single band get the cloud mask as a binary
+                if band == "B2":
+                    # Create no-data mask where 1 = missing data, 0 = valid data
+                    no_data_mask = s2_sr.mask().Not().toUint8()
+
+                    # directly compute the valid data mask and invert it
+                    valid_data_mask = s2_sr.reduce(ee.Reducer.allNonZero())
+                    # no_data_mask = valid_data_mask.Not().toUint8()
+
+                    mask_name = f"NoDataMask_{year}_Q{str(dt.quarter).zfill(2)}_{name}"
+
+                    mask_task = ee.batch.Export.image.toDrive(
+                        image=no_data_mask,
+                        description=mask_name,
+                        folder="cloud_mask",
+                        fileNamePrefix=mask_name,
+                        scale=SCALE,
+                        maxPixels=500000000000,
+                        region=site.getInfo()["coordinates"],
+                        fileFormat="GeoTIFF",
+                    )
+                    mask_task.start()
 # %% sync using rclone to local once all gee tasks are complete -
 # from terminal run
 # rclone sync mygdrive:/malawi_imagery_new /home/mmann1123/Downloads/malawi_imagery_new
@@ -226,22 +248,6 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
             task = ee.batch.Export.image(s2_sr, img_name, export_config)
             task.start()
 
-            # Create a binary mask from the masked areas (clouds)
-            cloud_mask = s2_sr.mask().Not()
-
-            # convert to unit8
-            cloud_mask = cloud_mask.toUint8()
-
-            # Export the binary mask as a separate image
-            mask_name = f"S2_SR_MASK_{year}_Q{str(dt.quarter).zfill(2)}_{name}"
-            mask_export_config = {
-                "scale": SCALE,
-                "maxPixels": 50000000000,
-                "driveFolder": folder,
-                "region": site,
-            }
-            mask_task = ee.batch.Export.image(cloud_mask, mask_name, mask_export_config)
-            mask_task.start()
 
 # %% sync using rclone to local once all gee tasks are complete -
 

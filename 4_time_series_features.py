@@ -63,7 +63,7 @@ logging.basicConfig(
 
 # Set up logging
 logging.basicConfig(
-    filename=f"{output_path}/error_log.log",
+    filename=f"{output_path}/out_log.log",
     level=logging.INFO,  # Change level to INFO to log everything
     format="%(asctime)s:%(levelname)s:%(message)s",
 )
