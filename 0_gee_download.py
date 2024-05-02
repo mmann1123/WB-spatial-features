@@ -6,12 +6,12 @@
 
 import ee
 import pendulum
-
-# from ipygee import *
 from helpers import *
 
+# from ipygee import *
+
 # run authenticate first time
-# ee.Authenticate()
+# ee.Authenticate("4/1AeaYSHAD-7pUTo0xPOA7wMn7RjSHaiqpWZsy5BP-PGhgWl6j1eYp7JF5KHc")
 ee.Initialize()
 # import geetools
 import geopandas as gpd
@@ -46,8 +46,9 @@ f_south1 = create_ee_polygon_from_geojson(f_south1)
 f_south2 = open("./data/south_adm2_part2.geojson")
 f_south2 = create_ee_polygon_from_geojson(f_south2)
 
-
-#  %% get time series bands of interest
+#################################################################
+#  %% get time series bands of interest SINGLE BAND
+#################################################################
 # SWITCHING TO SINGLE BAND TO DO INTERPOLATION
 # Red (Band 4): This band is sensitive to vegetation and can help differentiate between vegetated and non-vegetated areas within urban environments.
 # NIR (Near Infrared - Band 8): NIR is useful for distinguishing between different types of surfaces based on their reflectance properties. Urban areas typically have low NIR reflectance due to the presence of buildings and pavement.
@@ -144,7 +145,10 @@ for band in bands:
 # rclone sync mygdrive:/malawi_imagery_new /home/mmann1123/Downloads/malawi_imagery_new
 # if not working run:
 # rclone config and edit mygdrive remote to reestablish connection
-# %%
+
+#######################################################################
+# %% Multi-band imagery downloads
+#######################################################################
 # Set parameters
 bands = ["B2", "B3", "B4", "B8"]
 
@@ -155,7 +159,7 @@ NIR_DRK_THRESH = 0.2  #  0.2  Minimum NIR refl to be considered potential cloud 
 
 CLD_PRJ_DIST = 2  # 2 Maximum distance (km) to search for cloud shadows from cloud edges
 BUFFER = 40  # was 40-50 A buffer around the AOI to apply cloud mask
-folder = "malawi_imagery"
+folder = "malawi_imagery_clouds"
 SCALE = 10
 
 
@@ -222,6 +226,24 @@ for site, name in zip([fc_north, fc_south], ["north", "south"]):
             task = ee.batch.Export.image(s2_sr, img_name, export_config)
             task.start()
 
+            # Create a binary mask from the masked areas (clouds)
+            cloud_mask = s2_sr.mask().Not()
+
+            # convert to unit8
+            cloud_mask = cloud_mask.toUint8()
+
+            # Export the binary mask as a separate image
+            mask_name = f"S2_SR_MASK_{year}_Q{str(dt.quarter).zfill(2)}_{name}"
+            mask_export_config = {
+                "scale": SCALE,
+                "maxPixels": 50000000000,
+                "driveFolder": folder,
+                "region": site,
+            }
+            mask_task = ee.batch.Export.image(cloud_mask, mask_name, mask_export_config)
+            mask_task.start()
+
+# %% sync using rclone to local once all gee tasks are complete -
 
 # %% ANNUAL COMPOSITES
 # for band in bands:
