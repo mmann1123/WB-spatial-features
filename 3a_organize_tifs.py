@@ -41,6 +41,8 @@ files = [
     for f in os.listdir(source_directory)
     if os.path.isfile(os.path.join(source_directory, f))
 ]
+print("Files founds #:", len(files))
+print("Example files founds:", files[:10])
 
 
 # Function to handle file processing
