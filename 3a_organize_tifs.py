@@ -48,7 +48,7 @@ print("Example files founds:", files[:10])
 # Function to handle file processing
 def process_file(file):
     match = re.match(
-        r"S2_SR_2020_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_SC(\d+)_([a-zA-Z0-9_]+)\.tif",
+        r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_SC(\d+)_([a-zA-Z0-9_]+)\.tif",
         file,
     )
     if match:
