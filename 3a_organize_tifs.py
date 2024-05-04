@@ -1,4 +1,4 @@
-# %%
+# %% run with sbatch 3a_organize_tifs.sh
 import os
 import re
 import shutil
