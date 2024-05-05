@@ -1,5 +1,6 @@
-# %% Interpolate missing values in the time series
-#
+# %%
+# Description: Interpolate missing values in the time series
+# Auther: Michael Mann mmann1123@gwu.edu
 # expected file structure:
 # malawi_imagery_new (set current directory here)
 # ├── B11
@@ -115,25 +116,3 @@ for band_name in bands:
 
 # switch to geowombat env
 # NOTE use 1a_create_mosaics.py next
-
-
-# # %% calculate number of missing values in each quarter
-# import os
-# from glob import glob
-# import re
-# import numpy as np
-# import xarray as xr
-# import geowombat as gw
-# import numpy as np
-
-# os.chdir(r"/home/mmann1123/Desktop/mosaic")
-
-# north = sorted(glob("*north.tif"))
-# south = sorted(glob("*south.tif"))
-# south
-# # %%
-# with gw.open(north[0]) as src:
-#     display(np.isnan(src.sel(band=1)))
-#     # print(np.isnan(src.sel(band=1)).values)
-#     print(np.sum(np.isnan(src.sel(band=1)).values))
-# %%

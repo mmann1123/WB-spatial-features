@@ -1,4 +1,21 @@
 # %% run with sbatch 3a_organize_tifs.sh
+# Description: Organize the tifs into folders based on the feature and quarter
+# Author: Michael Mann GWU mmann1123@gwu.edu
+
+# expected file structure:
+# spfeas_outputs
+# ├── tifs
+# │   ├── S2_SR_2020_Q01_north_hog_SC1_0000000000.tif
+# │   ├── S2_SR_2020_Q01_north_hog_SC1_0000000001.tif
+
+# output file structure:
+# spfeas_outputs2
+# ├── tifs_organized
+# ├── south
+# |   ├── lbpm_2020_01_01_2020_03_31
+# |   |   ├── lbpm_sc7_kurtosis.tif
+# |   |   ├── lbpm_sc7_mean.tif
+
 import os
 import re
 import shutil

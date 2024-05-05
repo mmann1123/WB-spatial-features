@@ -1,9 +1,18 @@
 # %% This takes imagery, runs spfeas, and then converts the output VRT files
-# author: Michael Mann GWU
+# author: Michael Mann GWU mmann1123@gwu.edu
 # run from terminal as
 # python 2_run_spfeas.py
 # then submit all the batch scripts using
-# bash run_all_spfeas_batch_files.sh
+# bash run_all_spfeas_batch_files.sh or follow prompt
+
+# input file structure:
+# mosaics
+# ├── S2_SR_2020_Q04_north.tif
+# ├── S2_SR_2020_Q01_south.tif
+
+# NOTE: all inputs should be floating point
+# NOTE: --overwrite doesn't work for spfeas, so delete the output folder if you want to rerun
+
 import os
 from glob import glob
 from functions import *  # import helper functions
@@ -11,7 +20,6 @@ import subprocess
 from tqdm import tqdm
 from multiprocessing import Pool
 
-# NOTE: --overwrite doesn't work for spfeas, so delete the output folder if you want to rerun
 
 ############### EDIT THE FOLLOWING ################
 imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic_2020"  # path to folder containing images ending in .tif
@@ -28,22 +36,17 @@ email = "mmann1123@gwu.edu"  # email for slurm notifications
 # features to run and what scales
 feature_scale_dict = {
     "hog": [3, 5, 7],
-    # "lac": [3, 5, 7],
-    # "lbpm": [3, 5, 7],
-    # "mean": [3, 5, 7],
-    # "ndvi": [3, 5, 7],
-    # "pantex": [3, 5, 7],
-    # "sfs": [31, 51, 71],
-    # "orb": [31, 51, 71],
-    # "gabor": [3, 5, 7],
-    # "fourier": [31, 51, 71],
-    # break gabor and fourier into separate scripts because they take so long
-    # "gabor": [3],
-    # "gabor": [5],
-    # "gabor": [7],
-    # "fourier": [31],
-    # "fourier": [51],
-    # "fourier": [71],
+    "lac": [3, 5, 7],
+    "lbpm": [3, 5, 7],
+    "mean": [3, 5, 7],
+    "ndvi": [3, 5, 7],
+    "pantex": [3, 5, 7],
+    "sfs": [31, 51, 71],
+    "orb": [31, 51, 71],
+    "gabor": [3, 5, 7],
+    "fourier": [31, 51, 71],
+    # NOTE: Consider breaking gabor and fourier into separate scripts because they take so long
+    # eg "gabor": [3], "gabor": [5], "gabor": [7]  UNTESTED
 }
 
 image_name_subset = "*"  # subset of images to process, use '*' for all images or '*south*' for only south images
