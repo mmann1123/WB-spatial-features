@@ -1,4 +1,4 @@
-# %% run with sbatch 3a_organize_tifs.sh
+# %% run with sbatch 5a_organize_tifs.sh
 # Description: Organize the tifs into folders based on the feature and quarter
 # Author: Michael Mann GWU mmann1123@gwu.edu
 

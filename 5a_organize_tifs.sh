@@ -12,4 +12,4 @@
 
 source  ~/miniforge3/envs/geowombat/bin/python
 pip install pendulum 
-python 4_organize_tifs.py 
+python 5_organize_tifs.py 
