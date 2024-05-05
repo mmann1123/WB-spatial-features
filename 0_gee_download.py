@@ -1,5 +1,8 @@
+# Description: Download Sentinel-2 imagery from Google Earth Engine
+# outputs cloud free quaterly mosaic images in float32
+# author: Michael Mann mmann1123@gwu.edu
 # use geepy environment, run earthengine authenticate in commandline first
-#
+
 # requires https://cloud.google.com/sdk/docs/install
 # and https://developers.google.com/earth-engine/guides/python_install-conda
 # %%

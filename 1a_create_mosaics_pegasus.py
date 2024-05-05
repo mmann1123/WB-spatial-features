@@ -1,15 +1,26 @@
 # switch to geowombat env
-# %% attempt bgrn mosaic from interpolated stacks
+# %% bgrn mosaic from interpolated stacks
+# author: Michael Mann mmann1123@gwu.edu
+# to run from terminal: python 1a_create_mosaics_pegasus.py north
+
+# expected file structure:
+# malawi_imagery_new (set current directory here)
+# ├── B11
+# │   ├── S2_SR_B11_2016_Q1_south-0000000000-0000000000.tif
+# │   ├── S2_SR_B11_2016_Q1_south-0000000000-0000000001.tif
+# │   ├── etc
+# ├── B12
+# │   ├── S2_SR_B12_2016_Q1_south-0000000000-0000000000.tif
+# │   ├── S2_SR_B12_2016_Q1_south-0000000000-0000000001.tif
+# │   ├── etc
+# ├── B2
+# │   ├── ....
+
+# tifs should be in floating point 32 or 64
 
 
 def main():
     import argparse
-
-    parser = argparse.ArgumentParser(description="stack bgrn bands into a mosaic")
-
-    parser.add_argument("north_or_south", type=str, help="type 'north' or 'south'")
-    args = parser.parse_args()
-
     import geowombat as gw
     import os
     from helpers import list_files_pattern
@@ -20,6 +31,11 @@ def main():
     from xarray import concat
     import dask.array as da
     import xarray as xr
+
+    # get command line arguments
+    parser = argparse.ArgumentParser(description="stack bgrn bands into a mosaic")
+    parser.add_argument("north_or_south", type=str, help="type 'north' or 'south'")
+    args = parser.parse_args()
 
     # location of the interpolated image stacks
     # os.chdir(r"/CCAS/groups/engstromgrp/mike/interpolated/")
@@ -32,6 +48,15 @@ def main():
     # get image stacks
     images = glob(f"*.tif")
     images
+
+    print("Number of images found:", len(images))
+    if len(images) < 6:
+        print("Example", images[0])
+    else:
+        print("Example", images[:5])
+
+    if not images:
+        raise ValueError("No images found in the folder")
 
     # get unique year and quarter
     unique_quarters = [
@@ -51,6 +76,12 @@ def main():
         "2023_Q02",
         "2023_Q03",
         "2023_Q04",
+        "2024_Q01",
+        "2024_Q02",
+    ]
+
+    # Set quaters that should be skipped
+    skip_quarters = [
         "2024_Q01",
         "2024_Q02",
     ]
@@ -79,15 +110,10 @@ def main():
     )
 
     for quarter in unique_quarters:
+
         # skip unnecessary quarters
-        if quarter in [
-            "2020_Q01",
-            "2020_Q02",
-            "2020_Q03",
-            "2020_Q04",
-            "2024_Q01",
-            "2024_Q02",
-        ]:
+        if quarter in skip_quarters:
+            print("skipping quarter:", quarter)
             continue
         print("working on quarter:", quarter, "north_south:", north_south)
 

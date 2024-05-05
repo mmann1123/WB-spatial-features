@@ -1,10 +1,18 @@
+# author: Michael Mann mmann1123@gwu.edu
+# copies files from a source directory to a target directory based on the filename
+# input: folder of spfeas tifs
+# output: organized folder of tifs as follows:
+# north-south/feature_quarter_start_end/feature_name_band.tif
+# south/lbpm_2020_01_01_2020_03_31/lbpm_sc5_kurtosis.tif
+# ---------------------------------lbpm_sc7_kurtosis.tif
+
+
 import os
 import re
 import shutil
 
 # Define the source directory where your files are currently stored
 source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs"
-
 
 # Define the target directory where you want the files to be organized
 target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs_organized"
@@ -60,4 +68,6 @@ for file in files:
                 f"Feature {feature} in file {file} is not recognized or not in the list."
             )
     else:
-        print(f"Filename {file} does not match the expected pattern.")
+        print(
+            f"Filename {file} does not match the expected pattern. Update re.match('')"
+        )

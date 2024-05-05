@@ -1,9 +1,10 @@
 # %% This takes imagery, runs spfeas, and then converts the output VRT files
-# author: Michael Mann GWU
+# author: Michael Mann mmann1123@gwu.edu
 # run from terminal as
 # python 2_run_spfeas.py
-# then submit all the batch scripts using
-# bash run_all_spfeas_batch_files.sh
+# then submits all the batch scripts using bash run_all_spfeas_batch_files.sh
+# follow prompts
+
 import os
 from glob import glob
 from functions import *  # import helper functions

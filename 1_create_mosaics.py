@@ -1,5 +1,6 @@
 # %% Interpolate missing values in the time series
-#
+## author: Michael Mann mmann1123@gwu.edu
+
 # expected file structure:
 # malawi_imagery_new (set current directory here)
 # ├── B11
@@ -13,6 +14,7 @@
 # ├── B2
 # │   ├── ....
 
+# tifs should be in floating point 32 or 64
 
 from xr_fresh.interpolate_series import interpolate_nan
 from numpy import nan
