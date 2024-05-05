@@ -1,24 +1,45 @@
-# author: Michael Mann mmann1123@gwu.edu
-# copies files from a source directory to a target directory based on the filename
-# input: folder of spfeas tifs
-# output: organized folder of tifs as follows:
-# north-south/feature_quarter_start_end/feature_name_band.tif
-# south/lbpm_2020_01_01_2020_03_31/lbpm_sc5_kurtosis.tif
-# ---------------------------------lbpm_sc7_kurtosis.tif
+# %% run with sbatch 3a_organize_tifs.sh
+# Description: Organize the tifs into folders based on the feature and quarter
+# Author: Michael Mann GWU mmann1123@gwu.edu
 
+# expected file structure:
+# spfeas_outputs
+# ├── tifs
+# │   ├── S2_SR_2020_Q01_north_hog_SC1_0000000000.tif
+# │   ├── S2_SR_2020_Q01_north_hog_SC1_0000000001.tif
+
+# output file structure:
+# spfeas_outputs2
+# ├── tifs_organized
+# ├── south
+# |   ├── lbpm_2020_01_01_2020_03_31
+# |   |   ├── lbpm_sc7_kurtosis.tif
+# |   |   ├── lbpm_sc7_mean.tif
 
 import os
 import re
 import shutil
 
-# Define the source directory where your files are currently stored
-source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs"
+import logging
+from multiprocessing import Pool
+from helpers import get_quarter_dates
+from tqdm import tqdm
 
-# Define the target directory where you want the files to be organized
-target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs_organized"
+# Initialize logging
+logging.basicConfig(
+    filename="file_transfer_log.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
+# Define the source and target directories
+source_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs_2020/tifs"
+target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs2/tifs_organized"
 
-# List of features for easy access
+# Ensure the target directory exists
+os.makedirs(target_directory, exist_ok=True)
+
+# List of features to process
 features = [
     "fourier",
     "gabor",
@@ -32,9 +53,6 @@ features = [
     "sfs",
 ]
 
-# Make sure target directory exists
-os.makedirs(target_directory, exist_ok=True)
-
 # Get all files in the source directory
 files = [
     f
@@ -42,32 +60,63 @@ files = [
     if os.path.isfile(os.path.join(source_directory, f))
 ]
 
-# Process each file
-for file in files:
-    # Extract information from the filename
-    match = re.match(r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_.*\.tif", file)
+print("Files founds #:", len(files))
+print("Example files founds:", files[:10])
+
+
+# Function to handle file processing
+def process_file(file):
+    match = re.match(
+        r"S2_SR_(\d{4}_Q\d{2})_(north|south)_([a-z]+)_SC(\d+)_([a-zA-Z0-9_]+)\.tif",
+        file,
+    )
     if match:
-        quarter = match.group(1)
-        direction = match.group(2)
-        feature = match.group(3)
-
-        # Check if the feature is in the list to process
+        quarter, direction, feature, sc_number, descriptor = match.groups()
+        start, end = get_quarter_dates(quarter)
         if feature in features:
-            # Create the directory structure if it doesn't exist
-            dir_path = os.path.join(target_directory, direction, f"{feature}_{quarter}")
-            os.makedirs(dir_path, exist_ok=True)
-
-            # Define the new file path
-            new_file_path = os.path.join(dir_path, file)
-
-            # Move the file to the new location
-            shutil.move(os.path.join(source_directory, file), new_file_path)
-            print(f"Moved {file} to {new_file_path}")
-        else:
-            print(
-                f"Feature {feature} in file {file} is not recognized or not in the list."
+            dir_path = os.path.join(
+                target_directory, direction, f"{feature}_{start}_{end}"
             )
+            os.makedirs(dir_path, exist_ok=True)
+            new_file_path = os.path.join(
+                dir_path, f"{feature}_sc{sc_number}_{descriptor}.tif"
+            )
+            shutil.copy2(os.path.join(source_directory, file), new_file_path)
+            return "success", file, new_file_path
+        else:
+            return "error", file, "Feature not recognized"
     else:
-        print(
-            f"Filename {file} does not match the expected pattern. Update re.match('')"
-        )
+        return "error", file, "Filename pattern mismatch"
+
+
+# Run processing with multiprocessing
+if __name__ == "__main__":
+    success_count = 0
+    error_count = 0
+
+    with Pool() as pool:
+        # Wrap 'files' with tqdm for a progress bar
+        results = pool.imap_unordered(process_file, tqdm(files, total=len(files)))
+        for status, src, message in results:
+            if status == "success":
+                logging.info(f"Copied {src} to {message}")
+                success_count += 1
+            else:
+                logging.error(f"Error with {src}: {message}")
+                error_count += 1
+
+    # Print summary of the processing
+    logging.info(f"Total files processed: {len(files)}")
+    logging.info(f"Successful transfers: {success_count}")
+    logging.info(f"Failed transfers: {error_count}")
+    print(f"Total files processed: {len(files)}")
+    print(f"Successful transfers: {success_count}")
+    print(f"Failed transfers: {error_count}")
+
+# %% copy back
+# from glob import glob
+# import os
+# target_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/tifs_organized"
+# os.chdir(target_directory)
+
+# glob('*/*')
