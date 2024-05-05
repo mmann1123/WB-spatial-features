@@ -159,3 +159,18 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 0.2.14.tar.gz
+Ryan-Batch-Export-Cloud-Free-Mosaic.ipynb
+data/gadm41_MWI_1.json
+data/gadm41_MWI_2.json
+data/north_adm2.cpg
+data/north_adm2.dbf
+data/north_adm2.prj
+data/north_adm2.qmd
+data/north_adm2.shp
+data/north_adm2.shx
+data/south_adm2.cpg
+data/south_adm2.dbf
+data/south_adm2.prj
+data/south_adm2.qmd
+data/south_adm2.shp
+data/south_adm2.shx
