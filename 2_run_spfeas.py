@@ -25,7 +25,7 @@ email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 # features to run and what scales
 feature_scale_dict = {
-    # "hog": [3, 5, 7],
+    "hog": [3, 5, 7],
     # "lac": [3, 5, 7],
     # "lbpm": [3, 5, 7],
     # "mean": [3, 5, 7],
@@ -33,8 +33,8 @@ feature_scale_dict = {
     # "pantex": [3, 5, 7],
     # "sfs": [31, 51, 71],
     # "orb": [31, 51, 71],
-    "gabor": [3, 5, 7],
-    "fourier": [31, 51, 71],
+    # "gabor": [3, 5, 7],
+    # "fourier": [31, 51, 71],
     # break gabor and fourier into separate scripts because they take so long
     # "gabor": [3],
     # "gabor": [5],
