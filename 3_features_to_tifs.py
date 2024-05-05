@@ -6,6 +6,8 @@
 # python 3_features_to_tifs.py
 # Import modules
 
+# NOTE gabor takes 9 hours to process most others less than 2 hours . consider spliting gabor
+
 # %%
 import os
 from glob import glob
@@ -19,10 +21,12 @@ from tqdm import tqdm
 # path to folder containing outputs from spfeas (e.g. folders ending in _mean _gabor etc),
 # should be  {imagery_folder}/features from 2_run_spfeas.py
 
-feature_vrt_output_directory = r"/CCAS/groups/engstromgrp/mike/spfeas_outputs/features"
+feature_vrt_output_directory = (
+    r"/CCAS/groups/engstromgrp/mike/spfeas_outputs_2020/features"
+)
 
 partition = "short"  # partition for slurm
-time_request = "00-23:55:00"  # time request for slurm DD-HH:MM:SS
+time_request = "00-23:59:00"  # time request for slurm DD-HH:MM:SS
 email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 
@@ -63,6 +67,16 @@ slurm_output_directory = os.path.join(
 )
 os.makedirs(slurm_output_directory, exist_ok=True)
 
+# erase old slurm outputs
+files = glob(os.path.join(slurm_output_directory, "*.err")) + glob(
+    os.path.join(slurm_output_directory, "*.out")
+)
+
+with Pool() as p:
+    # Use tqdm for progress bar
+    for _ in tqdm(p.imap_unordered(remove_file, files), total=len(files)):
+        pass
+
 
 # write the batch script to run all the other batch scripts
 with open(
@@ -102,35 +116,43 @@ def process_vrt(vrt):
     scales = get_scales(vrt)
     # get feature name
     feature = get_feature_name(vrt)
+
     # get folder name
     folder = get_vrt_folder_name(vrt)
 
-    print(
-        "Processing feature: ",
-        feature,
-        " with scales: ",
-        scales,
-        " in folder: ",
-        folder,
-    )
+    band_count = 0
 
-    # bashscript output file name
-    bash_script_name = f"{folder}_vrt_to_tif.sh"
+    for scale in scales:
 
-    # create bash script path
-    path_to_bash_script = os.path.join(batch_script_path, bash_script_name)
+        print(
+            "Processing feature: ",
+            feature,
+            " with scales: ",
+            scales,
+            " in folder: ",
+            folder,
+        )
 
-    # delete the file if it exists
-    if os.path.exists(path_to_bash_script):
-        os.remove(path_to_bash_script)
-    # print("Writing bash file to: ", path_to_bash_script)
+        # bashscript output file name
+        bash_script_name = f"{folder}_{scale}_vrt_to_tif.sh"
 
-    # Write SBATCH header
-    with open(os.path.join(path_to_bash_script), "a+") as file:
-        file.write(
-            f"""#!/bin/bash
+        # create bash script path
+        path_to_bash_script = os.path.join(batch_script_path, bash_script_name)
+
+        # delete the file if it exists
+        if os.path.exists(path_to_bash_script):
+            os.remove(path_to_bash_script)
+        print("Writing bash file to: ", path_to_bash_script)
+
+        # unpack scales as space separated string
+        scale_text = "_".join([str(scale) for scale in scales])
+
+        # Write SBATCH header
+        with open(os.path.join(path_to_bash_script), "a+") as file:
+            file.write(
+                f"""#!/bin/bash
 #SBATCH -p {partition}
-#SBATCH -J {folder}_vrt2tif
+#SBATCH -J {folder}_{scale}_vrt2tif
 #SBATCH --export=NONE
 #SBATCH -t {time_request}
 #SBATCH --mail-type=ALL
@@ -144,18 +166,14 @@ source activate Ryan_CondaEnvP2.7
 # This script takes the VRT files (the output of spfeas) and extracts the VRT
 # band-by-band, assigning each band according to its output name. The order of
 # outputs is determined from the spfeas package.
+        
+    """
+            )
 
-               
-"""
-        )
+        # Open file and add comment indicating the scale and the output
+        with open(os.path.join(path_to_bash_script), "a+") as file:
+            file.write(f"###################### \n #{folder.upper()}\n\n")
 
-    band_count = 0
-
-    # Open file and add comment indicating the scale and the output
-    with open(os.path.join(path_to_bash_script), "a+") as file:
-        file.write(f"###################### \n #{folder.upper()}\n\n")
-
-    for scale in scales:
         for output in feature_bands_table[feature]:
 
             # Open file and add comment indicating the scale and the output
