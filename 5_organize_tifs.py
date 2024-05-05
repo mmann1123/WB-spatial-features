@@ -41,9 +41,9 @@ os.makedirs(target_directory, exist_ok=True)
 
 # List of features to process
 features = [
-    "fourier",
-    # "gabor",
-    "hog",
+    # "fourier",
+    "gabor",
+    # "hog",
     # "lac",
     # "lbpm",
     # "mean",
