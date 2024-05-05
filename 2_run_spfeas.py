@@ -44,7 +44,7 @@ feature_scale_dict = {
     # "fourier": [71],
 }
 
-image_name_subset = "*"  # subset of images to process, use '*' for all images
+image_name_subset = "*south*"  # subset of images to process, use '*' for all images or '*south*' for only south images
 
 ################ Don't edit below this line ################
 
