@@ -42,15 +42,15 @@ os.makedirs(target_directory, exist_ok=True)
 # List of features to process
 features = [
     "fourier",
-    "gabor",
+    # "gabor",
     "hog",
-    "lac",
-    "lbpm",
-    "mean",
-    "ndvi",
-    "orb",
-    "pantex",
-    "sfs",
+    # "lac",
+    # "lbpm",
+    # "mean",
+    # "ndvi",
+    # "orb",
+    # "pantex",
+    # "sfs",
 ]
 
 # Get all files in the source directory
