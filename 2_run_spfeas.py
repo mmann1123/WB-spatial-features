@@ -11,6 +11,8 @@ import subprocess
 from tqdm import tqdm
 from multiprocessing import Pool
 
+# NOTE: --overwrite doesn't work for spfeas, so delete the output folder if you want to rerun
+
 ############### EDIT THE FOLLOWING ################
 imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic_2020"  # path to folder containing images ending in .tif
 
@@ -44,7 +46,7 @@ feature_scale_dict = {
     # "fourier": [71],
 }
 
-image_name_subset = "*south*"  # subset of images to process, use '*' for all images or '*south*' for only south images
+image_name_subset = "*"  # subset of images to process, use '*' for all images or '*south*' for only south images
 
 ################ Don't edit below this line ################
 
