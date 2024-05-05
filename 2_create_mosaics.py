@@ -1,25 +1,28 @@
 # switch to geowombat env
-# %% attempt bgrn mosaic from interpolated stacks
+# %% Create bgrn mosaic from interpolated stacks
+# author: Michael Mann GWU mmann1123@gwu.edu
+# this is designed specifically to mosaic the bgrn bands for malawi where
+# the southern zone had multiple tiles per band
+# run from terminal as
+# python 2_create_mosaics.py north
+# python 2_create_mosaics.py south
 
 
 def main():
     import argparse
-
-    parser = argparse.ArgumentParser(description="stack bgrn bands into a mosaic")
-
-    parser.add_argument("north_or_south", type=str, help="type 'north' or 'south'")
-    args = parser.parse_args()
-
     import geowombat as gw
     import os
     from helpers import list_files_pattern
     from numpy import nan
     from glob import glob
-    import re
     from geowombat.backends.rasterio_ import get_file_bounds
     from xarray import concat
     import dask.array as da
-    import xarray as xr
+
+    # get arguments from the command line
+    parser = argparse.ArgumentParser(description="stack bgrn bands into a mosaic")
+    parser.add_argument("north_or_south", type=str, help="type 'north' or 'south'")
+    args = parser.parse_args()
 
     # location of the interpolated image stacks
     # os.chdir(r"/CCAS/groups/engstromgrp/mike/interpolated/")
@@ -33,19 +36,16 @@ def main():
     images = glob(f"*.tif")
     images
 
+    print("Number of images found:", len(images))
+    if len(images) < 6:
+        print("Example", images[0])
+    else:
+        print("Example", images[:5])
+
+    if not images:
+        raise ValueError("No images found in the folder")
+
     quarters_to_skip = [
-        "2021_Q01",
-        "2021_Q02",
-        "2021_Q03",
-        "2021_Q04",
-        "2022_Q01",
-        "2022_Q02",
-        "2022_Q03",
-        "2022_Q04",
-        "2023_Q01",
-        "2023_Q02",
-        "2023_Q03",
-        "2023_Q04",
         "2024_Q01",
         "2024_Q02",
     ]
@@ -178,7 +178,7 @@ def main():
                         B8 = B8.fillna(B8.mean(skipna=True))
 
                 bands = [B2, B3, B4, B8]
-                out = xr.concat(bands, dim="band")
+                out = concat(bands, dim="band")
                 out.attrs = B2.attrs
 
                 print("files:", bgrn)
@@ -223,7 +223,7 @@ def main():
                 B8 = B8.fillna(B8.mean(skipna=True))  # stack the bands
 
             bands = [B2, B3, B4, B8]
-            out = xr.concat(bands, dim="band")
+            out = concat(bands, dim="band")
             out.attrs = B2.attrs
 
             print("files:", bgrn)

@@ -1,3 +1,8 @@
+# Description: This script downloads Sentinel-2 imagery from Google Earth Engine
+# for the Malawi study area. The script downloads quarterly composites for
+# the years 2021-2023. The script uses the Google Earth Engine Python API.
+# author: Michael Mann mmann1123@gwu.edu
+
 # use geepy environment, run earthengine authenticate in commandline first
 #
 # requires https://cloud.google.com/sdk/docs/install

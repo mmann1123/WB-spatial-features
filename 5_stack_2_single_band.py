@@ -1,5 +1,7 @@
 # geoombwat env
-# convert multiband images to single band
+# OPTIONAL: convert multiband images to single band for time series feature extraction
+# author: Michael Mann GWU mmann1123@gwu.edu
+
 from glob import glob
 import os
 import geowombat as gw

@@ -1,5 +1,21 @@
 # %% xr_fresh env
+# Description: Extract time series features from the single band mosaics
+# author: Michael Mann GWU mmann1123@gwu.edu
 # before this run 4a_stack_2_single_band.py
+
+# expected file structure:
+# single_band_mosaics
+# ├── B11
+# │   ├── B11_abs_energy_2020_Q01.tif
+# │   ├── B11_absolute_sum_of_changes_2020_Q01.tif
+# │   ├── etc
+# ├── B12
+# │   ├── B12_abs_energy_2020_Q01.tif
+# │   ├── B12_absolute_sum_of_changes_2020_Q01.tif
+# │   ├── etc
+
+# NOTE: inputs can be floating point or integer
+
 import geowombat as gw
 import os, sys
 
@@ -41,9 +57,10 @@ complete_times_series_list = {
 os.chdir("/mnt/bigdrive/Dropbox/wb_malawi/malawi_imagery_new/single_band_mosaics/")
 images = sorted(glob("*.tif"))
 print(images)
+
 # %%
 
-# # add data notes
+# add data notes set up logging
 try:
     Path(f"{output_path}").mkdir(parents=True)
 except FileExistsError:
@@ -71,7 +88,11 @@ logging.basicConfig(
 for zone in zones:
     a_zone = sorted([f for f in images if zone in f])
 
-    for band_name in ["B8"]:  # "B12", "B11",
+    for band_name in [
+        "B8",
+        "B12",
+        "B11",
+    ]:
 
         # isolate the grid
         a_band = sorted([f for f in a_zone if band_name in f])

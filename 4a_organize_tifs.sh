@@ -8,7 +8,8 @@
 #SBATCH -e write_tifs.err
 #SBATCH -o write_tifs.out
 
+# Use this to run 4_organize_tifs.py 
 
 source  ~/miniforge3/envs/geowombat/bin/python
 pip install pendulum 
-python 3a_organize_tifs.py 
+python 4_organize_tifs.py 
