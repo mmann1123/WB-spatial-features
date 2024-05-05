@@ -25,14 +25,14 @@ email = "mmann1123@gwu.edu"  # email for slurm notifications
 
 # features to run and what scales
 feature_scale_dict = {
-    # "hog": [3, 5, 7],
-    "lac": [3, 5, 7],
-    "lbpm": [3, 5, 7],
-    "mean": [3, 5, 7],
-    "ndvi": [3, 5, 7],
-    "pantex": [3, 5, 7],
-    "sfs": [31, 51, 71],
-    "orb": [31, 51, 71],
+    "hog": [3, 5, 7],
+    # "lac": [3, 5, 7],
+    # "lbpm": [3, 5, 7],
+    # "mean": [3, 5, 7],
+    # "ndvi": [3, 5, 7],
+    # "pantex": [3, 5, 7],
+    # "sfs": [31, 51, 71],
+    # "orb": [31, 51, 71],
     # break gabor and fourier into separate scripts because they take so long
     "gabor": [3],
     "gabor": [5],
@@ -117,7 +117,9 @@ for image in tqdm(images, desc="writing new batch scripts"):
         scale_text = " ".join([str(scale) for scale in scales])
 
         # write the batch script
-        with open(f"{batch_script_path}/{image_name}_{feature}.sh", "w") as f:
+        with open(
+            f"{batch_script_path}/{image_name}_{feature}_{scale_text}.sh", "w"
+        ) as f:
             f.write(
                 f"""#!/bin/bash
 #SBATCH -p {partition}
@@ -134,7 +136,6 @@ export PATH="/groups/engstromgrp/anaconda3/bin:$PATH"
 source activate Ryan_CondaEnvP2.7
 
 # output folders will be created automatically
-# scales 3, 5, 7
 spfeas -i {image} -o {os.path.join(output_folder, "features", image_name+'_'+feature)} --block 1 --scales {scale_text} --tr {feature} --overwrite
 
 """
