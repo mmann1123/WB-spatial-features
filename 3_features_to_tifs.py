@@ -25,6 +25,7 @@ feature_vrt_output_directory = (
     r"/CCAS/groups/engstromgrp/mike/spfeas_outputs_2020/features"
 )
 
+vrt_glob = '*'   # Subset features: use '*' for all vrt files or '*fourier*
 partition = "short"  # partition for slurm
 time_request = "00-23:59:00"  # time request for slurm DD-HH:MM:SS
 email = "mmann1123@gwu.edu"  # email for slurm notifications
@@ -51,8 +52,6 @@ os.makedirs(batch_script_path, exist_ok=True)
 
 # remove any existing batch scripts using pool map
 print("Removing existing batch scripts")
-
-
 # Get list of files
 files = glob(os.path.join(batch_script_path, "*.sh"))
 
@@ -71,7 +70,6 @@ os.makedirs(slurm_output_directory, exist_ok=True)
 files = glob(os.path.join(slurm_output_directory, "*.err")) + glob(
     os.path.join(slurm_output_directory, "*.out")
 )
-
 with Pool() as p:
     # Use tqdm for progress bar
     for _ in tqdm(p.imap_unordered(remove_file, files), total=len(files)):
@@ -100,13 +98,15 @@ done
 
 
 # Get all VRT paths
-vrt_paths = glob(os.path.join(feature_vrt_output_directory, "*/*.vrt"))
+vrt_paths = glob(os.path.join(feature_vrt_output_directory, f"*/{vrt_glob}.vrt"))
+print("Number of images found:", len(vrt_paths))
+if len(vrt_paths) < 6:
+    print("Example", vrt_paths[0])
+else:
+    print("Example", vrt_paths[:5])
+
 if not vrt_paths:
     raise ValueError("No vrts found in the folder")
-print(
-    "##################################\n Number of vrt files found: ", len(vrt_paths)
-)
-print("Examples: ", vrt_paths[:5])
 
 # for each vrt file get its scales and feature name, and region based on the vrt path
 
