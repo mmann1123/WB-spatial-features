@@ -61,7 +61,12 @@ files = [
 ]
 
 print("Files founds #:", len(files))
-print("Example files founds:", files[:10])
+if not files:
+    raise ValueError("No files found in the folder")
+if len(files) < 6:
+    print("Example", files[0])
+else:
+    print("Example", files[:5])
 
 
 # Function to handle file processing

@@ -53,13 +53,12 @@ def main():
     images
 
     print("Number of images found:", len(images))
+    if not images:
+        raise ValueError("No images found in the folder")
     if len(images) < 6:
         print("Example", images[0])
     else:
         print("Example", images[:5])
-
-    if not images:
-        raise ValueError("No images found in the folder")
 
     # list all unique year and quarter
     unique_quarters = [
