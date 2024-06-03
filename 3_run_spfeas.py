@@ -24,10 +24,10 @@ from multiprocessing import Pool
 
 
 ############### EDIT THE FOLLOWING ################
-imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic_2020"  # path to folder containing images ending in .tif
+imagery_folder = "/CCAS/groups/engstromgrp/mike/mosaic"  # path to folder containing images ending in .tif
 
 output_folder_name = (
-    "spfeas_outputs_2020"  # name of folder to hold spfeas outputs not path
+    "spfeas_outputs2"  # name of folder to hold spfeas outputs not path
 )
 
 band_order = "bgrn"  # band order for spfeas

@@ -25,7 +25,7 @@ feature_vrt_output_directory = (
     r"/CCAS/groups/engstromgrp/mike/spfeas_outputs_2020/features"
 )
 
-vrt_glob = '*south*hog*'   # Subset features: use '*' for all vrt files or '*fourier*' or '*south*hog*' etc 
+vrt_glob = '*'   # Subset features: use '*' for all vrt files or '*fourier*' or '*south*hog*' etc 
 partition = "short"  # partition for slurm
 time_request = "00-23:59:00"  # time request for slurm DD-HH:MM:SS
 email = "mmann1123@gwu.edu"  # email for slurm notifications
