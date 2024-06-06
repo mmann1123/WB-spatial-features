@@ -176,7 +176,7 @@ sympy==1.0
 tables==3.4.2
 terminado==0.6
 toolz==0.8.0
-tornado==4.3
+tornado==6.4.1
 traitlets==4.2.1
 unicodecsv==0.14.1
 virtualenv==16.0.0
