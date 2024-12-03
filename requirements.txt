@@ -156,7 +156,7 @@ rope==0.9.4
 Rtree==0.8.3
 scikit-image==0.13.0
 scikit-learn==0.18.2
-scipy==0.19.1
+scipy==1.11.1
 Shapely==1.6.4.post2
 simplegeneric==0.8.1
 simplejson==3.16.0
