@@ -90,7 +90,7 @@ EOF
 pip install -r spfeas_requirements.txt
 
 # Download and install mpglue
-wget https://github.com/jgrss/mpglue/archive/refs/tags/v0.2.14.tar.gz -O mpglue-0.2.14.tar.gz
+wget https://github.com/jgrss/mpglue/archive/refs/tags/0.2.14.tar.gz -O mpglue-0.2.14.tar.gz
 pip install mpglue-0.2.14.tar.gz
 
 # Clone and install spfeas
