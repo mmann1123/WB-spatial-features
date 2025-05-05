@@ -2,13 +2,14 @@
 set -e
 
 # Create and activate environment
+mamba remove -n spfeas --all -y
 mamba create -n spfeas python=3.6 -y
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate spfeas
 
 
 # Install dependencies
-mamba install -c conda-forge pytables qtconsole gdal=2 -y
+mamba install -c conda-forge pytables qtconsole libstdcxx-ng=12 opencv gdal=2  -y
 
 # Create requirements file
 cat << EOF > spfeas_requirements.txt
@@ -69,7 +70,7 @@ qtawesome==0.4.4
 qtconsole==4.3.0
 rasterio
 rope-py3k==0.9.4.post1
-scikit-learn==0.19.0
+scikit-learn==0.22
 seaborn==0.7.1
 shapely==1.6.3
 simplegeneric==0.8.1
@@ -94,6 +95,8 @@ wget https://github.com/jgrss/mpglue/archive/refs/tags/0.2.14.tar.gz -O mpglue-0
 pip install mpglue-0.2.14.tar.gz
 
 # Clone and install spfeas
-git clone https://github.com/jgrss/spfeas.git
+if [ ! -d "spfeas" ]; then
+    git clone https://github.com/jgrss/spfeas.git
+fi
 cd spfeas
 pip install .
