@@ -82,7 +82,7 @@ folder = "malawi_imagery_new_split"
 SCALE = 10
 
 
-# %% QUARTERLY COMPOSITES
+# %% QUARTERLY COMPOSITES  Cloud mask
 for band in bands:
     for site, name in zip(
         [f_south1, f_south2, fc_north], ["south1", "south2", "north"]
