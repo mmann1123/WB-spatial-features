@@ -277,8 +277,8 @@ dependencies:
       - numba==0.53.1
       - numpydoc==0.6.0
       - odo==0.5.0
-      - opencv-contrib-python==4.11.0.86
-      - opencv-python==4.5.5.64
+      #- opencv-contrib-python==4.11.0.86
+      - opencv-python==3.4.1.15
       - openpyxl==2.4.7
       - pandas==1.1.5
       - pandocfilters==1.5.1
