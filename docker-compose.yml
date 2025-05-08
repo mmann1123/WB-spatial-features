@@ -8,10 +8,15 @@ services:
     stdin_open: true  # Keep the container's STDIN open
     tty: true         # Allocate a pseudo-TTY
     command: /bin/bash
-
-
-services:
-  myservice:
-    image: mmann1123/spfeas
     volumes:
       - /mnt/bigdrive/Dropbox/South_Africa_data/Projects/Agriculture_Comp/S1c_data:/mnt/
+    entrypoint: >
+      /bin/bash -c "
+      git clone https://github.com/mmann1123/WB-spatial-features.git /mnt &&
+      git clone https://github.com/mmann1123/South_Africa_Crop_Comp.git /mnt &&
+      exec /bin/bash
+      "
+ 
+
+
+ 
