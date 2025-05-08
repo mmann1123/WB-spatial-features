@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  spfeas:
+    build:
+      context: .
+      dockerfile: dockerfile
+    stdin_open: true  # Keep the container's STDIN open
+    tty: true         # Allocate a pseudo-TTY
+    command: /bin/bash
+
+
+services:
+  myservice:
+    image: mmann1123/spfeas
+    volumes:
+      - /mnt/bigdrive/Dropbox/South_Africa_data/Projects/Agriculture_Comp/S1c_data:/mnt/
