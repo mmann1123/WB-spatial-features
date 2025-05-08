@@ -396,6 +396,9 @@ RUN /opt/conda/bin/conda run -n spfeas pip install mpglue-0.2.14.tar.gz
 # # Clone and install spfeas
 RUN git clone https://github.com/jgrss/spfeas.git /opt/spfeas && \
     /opt/conda/bin/conda run -n spfeas pip install /opt/spfeas
+# initialize mamba for bash
+RUN echo 'eval "$(mamba shell hook --shell bash)"' >> ~/.bashrc 
+RUN bash -c "source ~/.bashrc"
 
 # Activate the spfeas environment by default when the container starts
 CMD ["bash", "-c", "source activate spfeas && exec bash"]
