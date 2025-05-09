@@ -316,7 +316,7 @@ dependencies:
       - python-dateutil==2.8.0
       - pytz==2025.2
       - pywavelets==1.1.1
-      - pyyaml==6.0.1
+      - pyyaml==5.1.1
       - pyzmq==16.0.2
       - qtawesome==0.4.4
       - qtconsole==4.3.0
